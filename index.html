@@ -1294,7 +1294,7 @@ body::after {
               <table class="g-table">
                 <thead><tr><th></th><th>NAME</th><th>EFFECT</th><th>COST</th></tr></thead>
                 <tbody>
-                  <tr><td>⚡</td><td>ICE Spike v2</td><td>Breach speed +20%. Deploy button: +15% breach instantly.</td><td class="g-cost">200 CC</td></tr>
+                  <tr><td>⚡</td><td>ICE Spike v2</td><td>Use on Contracts screen: reduces that contract's stage count by 1. Min 1 stage. Only usable on ★★+ contracts.</td><td class="g-cost">200 CC</td></tr>
                   <tr><td>🔮</td><td>Quantum Hash Cracker</td><td>Unlocks HARD tier contracts (★★★★).</td><td class="g-cost">500 CC</td></tr>
                   <tr><td>🕸</td><td>Ghost Proxy Mesh</td><td>Trace rate −35%. Deploy button: cut trace −20% mid-mission.</td><td class="g-cost">350 CC</td></tr>
                   <tr><td>🧠</td><td>Neural Scripting Kit</td><td>Auto-solves all mini-games, awarding full breach bonus.</td><td class="g-cost">150 CC</td></tr>
@@ -1332,7 +1332,7 @@ body::after {
             <div class="g-title"><span class="g-num">07</span>MINI-GAMES</div>
             <div class="g-body">
               <p>Each stage in a contract randomly assigns one of 6 mini-game types. You must complete it before the stage timer runs out or the trace meter hits 100%. All 6 are explained in full below.</p>
-              <div class="g-callout g-tip"><span class="g-clabel">// SHORTCUTS</span><strong>Neural Kit</strong> auto-solves any game type instantly. <strong>Zero Day</strong> skips the stage entirely without playing. Both consume one charge from your stock. <strong>Blacklight Scanner</strong> is used on the Contracts screen before picking a job, not during missions.</div>
+              <div class="g-callout g-tip"><span class="g-clabel">// SHORTCUTS</span><strong>Neural Kit</strong> auto-solves any game type instantly. <strong>Zero Day</strong> skips the stage entirely without playing. Both consume one charge from your stock. <strong>Blacklight Scanner</strong> and <strong>ICE Spike</strong> are both used on the Contracts screen before picking a job, not during missions.</div>
 
               <div class="g-sub-title">1. CIPHER DECODE</div>
               <p>A hacking-related word has been scrambled into a random order. Your job is to figure out the original word and type it correctly.</p>
@@ -1478,7 +1478,7 @@ body::after {
 const G = {
   cc:250, xp:0, lvl:1, rep:0,
   contractsRun:0, contractsWon:0, totalEarned:0,
-  inventory:[], stock:{}, contractsScanned:false,
+  inventory:[], stock:{}, contractsScanned:false, iceSpiked:{},
   currentMission:null, missionInterval:null,
   history:[], skills:{breach:10,stealth:0,decrypt:0,exploit:3}, achievements:{}
 };
@@ -1487,7 +1487,7 @@ const G = {
 // DATA
 // ============================================================
 const TOOLS = [
-  {id:'ice_spike',    name:'ICE Spike v2',         icon:'⚡',cost:200,consumable:true,  desc:'Advanced ICE eliminator. Deploy on one stage: +25% breach progress instantly.', effect:'Breach +25% (one stage)'},
+  {id:'ice_spike',    name:'ICE Spike v2',         icon:'⚡',cost:200,consumable:true,  desc:'Intrusion countermeasure eliminator. Use on the Contracts screen to reduce a contract\'s stage count by 1 before you accept it. Minimum 1 stage. Only usable on \u2605\u2605 contracts and above.', effect:'Reduce contract stages by 1 (pre-mission)'},
   {id:'quantum_hash', name:'Quantum Hash Cracker',  icon:'🔮',cost:500,consumable:false, desc:'Quantum decryption module. Permanently unlocks HARD tier contracts once purchased.', effect:'Unlocks Hard contracts (permanent)'},
   {id:'ghost_proxy',  name:'Ghost Proxy Mesh',      icon:'🕸',cost:350,consumable:true,  desc:'Multi-layer anonymizer. Deploy on one stage: halves trace accumulation for that stage.', effect:'Trace rate -50% (one stage)'},
   {id:'neural_kit',   name:'Neural Scripting Kit',  icon:'🧠',cost:150,consumable:true,  desc:'AI payload automation. Deploy on one stage: instantly auto-solves the mini-game.', effect:'Auto-solve mini-game (one stage)'},
@@ -1629,6 +1629,17 @@ function totalItems() { return G.inventory.length + Object.values(G.stock).reduc
 // ============================================================
 // CONTRACTS SCREEN
 // ============================================================
+function doIceSpike(contractId) {
+  if (getStock('ice_spike') <= 0) return;
+  if (G.iceSpiked[contractId]) return; // already spiked this visit
+  useStock('ice_spike');
+  G.iceSpiked[contractId] = true;
+  renderContracts._keepScan = true;
+  notify('ICE Spike: Contract reduced by 1 stage!');
+  termLog('[ICE SPIKE] Countermeasures eliminated -- contract difficulty reduced.', 't-breach');
+  renderContracts();
+}
+
 function doContractScan() {
   if (getStock('blacklight') <= 0) return;
   useStock('blacklight');
@@ -1640,8 +1651,8 @@ function doContractScan() {
 }
 
 function renderContracts() {
-  // Scan state resets each time you visit the contracts screen
-  if (!renderContracts._keepScan) { G.contractsScanned = false; }
+  // Scan/spike state resets each time you visit the contracts screen
+  if (!renderContracts._keepScan) { G.contractsScanned = false; G.iceSpiked = {}; }
   renderContracts._keepScan = false;
 
   // Update blacklight scan button
@@ -1684,25 +1695,50 @@ function renderContracts() {
       if (!t) return true;
       return t.consumable ? getStock(r) <= 0 : !G.inventory.includes(r);
     });
+    // Apply ICE Spike reduction if spiked this visit
+    var effectiveDiff = G.iceSpiked[c.id] ? Math.max(1, c.diff - 1) : c.diff;
+    var isSpiked = !!G.iceSpiked[c.id];
+
     var card = document.createElement('div');
     card.className = 'contract-card' + (locked ? ' locked' : '');
     var stars = Array.from({length:5}, function(_,i) {
-      return '<span class="star ' + (i < c.diff ? 'filled' : 'empty') + '">' + (i < c.diff ? '\u2605' : '\u2606') + '</span>';
+      return '<span class="star ' + (i < effectiveDiff ? 'filled' : 'empty') + '">' + (i < effectiveDiff ? '\u2605' : '\u2606') + '</span>';
     }).join('');
     var showBonus = G.contractsScanned && !c.ghost;
     var rewardText = c.ghost ? '???-550 CC' : (c.reward + (showBonus ? '+' + c.bonus : '') + ' CC');
     var reqText = c.req.length
       ? '<div class="cc-req">REQ: ' + c.req.map(function(r){var t=TOOLS.find(function(t){return t.id===r;});return t?t.name:r;}).join(', ') + '</div>'
       : '';
+
+    // ICE Spike button: show on unlocked 2+ star contracts (original diff, not already spiked)
+    var iceBtn = '';
+    if (!locked && c.diff >= 2) {
+      if (isSpiked) {
+        iceBtn = '<button class="btn btn-sm" style="border-color:var(--green-dim);color:var(--green-dim);cursor:default;margin-right:6px" disabled>⚡ SPIKED</button>';
+      } else if (getStock('ice_spike') > 0) {
+        iceBtn = '<button class="btn btn-sm" style="border-color:var(--amber);color:var(--amber);margin-right:6px" id="ice-btn-' + c.id + '">⚡ ICE SPIKE (x' + getStock('ice_spike') + ')</button>';
+      }
+    }
+
+    var stageLabel = effectiveDiff + ' STAGE' + (effectiveDiff>1?'S':'') + (isSpiked ? ' <span style="color:var(--green);font-size:9px">(REDUCED)</span>' : '');
+
     card.innerHTML = '<div class="cc-header"><div class="cc-title">' + c.name + ': ' + c.target + '</div><div class="cc-diff">' + stars + '</div></div>'
-      + '<div class="cc-meta"><span class="cc-reward">\u29e1 ' + rewardText + '</span><span class="cc-type">[' + c.type + ']</span><span class="cc-risk">RISK: ' + c.risk + '</span><span style="color:var(--text-dim)">' + c.diff + ' STAGE' + (c.diff>1?'S':'') + '</span></div>'
+      + '<div class="cc-meta"><span class="cc-reward">\u29e1 ' + rewardText + '</span><span class="cc-type">[' + c.type + ']</span><span class="cc-risk">RISK: ' + c.risk + '</span><span style="color:var(--text-dim)">' + stageLabel + '</span></div>'
       + '<div class="cc-desc">' + c.desc + '</div>'
       + reqText
-      + '<button class="btn ' + (locked ? 'btn-locked' : 'btn-blue') + ' btn-sm" ' + (locked ? 'disabled' : '') + '>' + (locked ? '[LOCKED]' : '[ACCEPT CONTRACT]') + '</button>';
+      + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'
+      + iceBtn
+      + '<button class="btn ' + (locked ? 'btn-locked' : 'btn-blue') + ' btn-sm" ' + (locked ? 'disabled' : '') + '>' + (locked ? '[LOCKED]' : '[ACCEPT CONTRACT]') + '</button>'
+      + '</div>';
+
     if (!locked) {
-      (function(contract) {
-        card.querySelector('button').addEventListener('click', function() { startMission(contract); });
-      })(c);
+      (function(contract, effDiff) {
+        card.querySelector('.btn-blue') && card.querySelector('.btn-blue').addEventListener('click', function() {
+          startMission(contract, effDiff);
+        });
+        var ib = card.querySelector('#ice-btn-' + contract.id);
+        if (ib) ib.addEventListener('click', function(e) { e.stopPropagation(); doIceSpike(contract.id); });
+      })(c, effectiveDiff);
     }
     list.appendChild(card);
   });
@@ -1711,11 +1747,12 @@ function renderContracts() {
 // ============================================================
 // MISSION ENGINE
 // ============================================================
-function startMission(contract) {
+function startMission(contract, effectiveDiff) {
+  var diff = (effectiveDiff !== undefined) ? effectiveDiff : contract.diff;
   var shuffled = MINIGAME_TYPES.slice().sort(function() { return Math.random() - 0.5; });
-  var gameQueue = shuffled.slice(0, contract.diff);
+  var gameQueue = shuffled.slice(0, diff);
   G.currentMission = Object.assign({}, contract, {
-    gameQueue: gameQueue, gameIdx: 0, gamesWon: 0,
+    diff: diff, gameQueue: gameQueue, gameIdx: 0, gamesWon: 0,
     traceVal: 0, peakTrace: 0, timeLeft: contract.timePerGame,
     logTimer: 0, logIdx: 0, bonusEarned: G.contractsScanned,
     stageTraceMult: 1, stageSolved: false, manualSolves: 0
@@ -1787,14 +1824,6 @@ function useConsumable(id) {
     missionLog('[NEURAL KIT] AI script injected -- auto-solving.', 't-success');
     notify('Neural Kit: Stage auto-solved!');
     solveCurrentStage(true);
-  } else if (id === 'ice_spike') {
-    var cur = parseFloat(document.getElementById('breach-bar').style.width) || 0;
-    var nv = Math.min(100, cur + 25);
-    document.getElementById('breach-bar').style.width = nv + '%';
-    document.getElementById('breach-pct').textContent = Math.round(nv) + '%';
-    missionLog('[ICE SPIKE] Payload boost -- breach +25%.', 't-breach');
-    notify('ICE Spike: Breach +25%!');
-    if (nv >= 100) solveCurrentStage(true);
   } else if (id === 'ghost_proxy') {
     m.stageTraceMult = 0.5;
     missionLog('[GHOST PROXY] Anonymization mesh active -- trace halved.', 't-info');
