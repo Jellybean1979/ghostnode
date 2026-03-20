@@ -642,6 +642,80 @@ body::after {
 }
 .deploy-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
+/* Mini-game progress dots */
+.mg-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: all 0.3s;
+  font-size: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.mg-dot.active { border-color: var(--amber); background: rgba(255,170,0,0.2); animation: blink 1s infinite; }
+.mg-dot.done { border-color: var(--green); background: var(--green); }
+.mg-dot.failed { border-color: var(--red); background: var(--red); }
+
+/* Binary decoder game */
+.binary-wrap { text-align: center; }
+.binary-prompt { font-family: var(--font-crt); font-size: 22px; color: var(--blue); letter-spacing: 4px; margin: 8px 0; text-shadow: 0 0 8px var(--blue); word-break: break-all; }
+.binary-input {
+  font-family: var(--font-crt); font-size: 22px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--green); text-align: center; padding: 6px;
+  width: 100%; letter-spacing: 4px; outline: none;
+}
+.binary-input:focus { border-color: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+
+/* Typing race game */
+.typing-wrap { display: flex; flex-direction: column; gap: 8px; }
+.typing-prompt {
+  font-family: var(--font-crt); font-size: 15px; color: var(--amber);
+  letter-spacing: 2px; line-height: 1.6; word-break: break-all;
+  background: var(--bg); border: 1px solid var(--border); padding: 8px;
+}
+.typing-prompt span.done { color: var(--green); }
+.typing-prompt span.cur { color: var(--bg); background: var(--green); }
+.typing-prompt span.err { color: var(--red); background: rgba(255,50,50,0.2); }
+.typing-input {
+  font-family: var(--font-crt); font-size: 16px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--green); padding: 6px; width: 100%; outline: none; letter-spacing: 2px;
+}
+.typing-input:focus { border-color: var(--green); }
+.typing-bar-outer { height: 6px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; }
+.typing-bar-fill { height: 100%; background: var(--green); box-shadow: 0 0 6px var(--green); transition: width 0.1s; }
+
+/* Sequence memory game */
+.seq-wrap { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.seq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; }
+.seq-tile {
+  aspect-ratio: 1; background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; cursor: pointer; transition: all 0.15s; font-family: var(--font-crt);
+  user-select: none;
+}
+.seq-tile:hover { border-color: var(--blue); }
+.seq-tile.flash { background: rgba(0,212,255,0.3); border-color: var(--blue); box-shadow: 0 0 10px var(--blue); }
+.seq-tile.correct { background: rgba(0,255,65,0.2); border-color: var(--green); }
+.seq-tile.wrong { background: rgba(255,50,50,0.2); border-color: var(--red); animation: shake 0.3s; }
+
+/* Wire trace game */
+.wire-wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.wire-grid { display: grid; gap: 3px; }
+.wire-cell {
+  width: 32px; height: 32px; background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; transition: all 0.12s;
+  font-family: var(--font-crt); user-select: none;
+}
+.wire-cell:hover { border-color: var(--blue-dim); }
+.wire-cell.start { border-color: var(--green); color: var(--green); background: rgba(0,255,65,0.1); }
+.wire-cell.end { border-color: var(--amber); color: var(--amber); background: rgba(255,170,0,0.1); }
+.wire-cell.path { background: rgba(0,212,255,0.15); border-color: var(--blue-dim); color: var(--blue); }
+.wire-cell.selected { background: rgba(0,212,255,0.3); border-color: var(--blue); box-shadow: 0 0 6px var(--blue); }
+.wire-cell.wall { background: #0a0a0a; border-color: #111; color: #222; cursor: not-allowed; }
+
 /* === BLACK MARKET === */
 #market-screen {}
 .market-grid {
@@ -1002,25 +1076,17 @@ body::after {
     <!-- CONTRACTS -->
     <div id="contracts-screen" class="screen">
       <div class="screen-header">AVAILABLE CONTRACTS</div>
-      <div class="screen-sub">SELECT A TARGET // CURRENT CLEARANCE: <span id="clearance-text">LEVEL 1</span></div>
+      <div class="screen-sub">&#9733; = NUMBER OF STAGES REQUIRED &mdash; ALL MUST BE COMPLETED</div>
       <div class="contracts-grid">
         <div class="contract-list" id="contract-list"></div>
         <div class="contract-sidebar">
           <div class="sidebar-panel">
-            <div class="sp-title">OPERATOR STATS</div>
-            <div class="stat-row"><span class="stat-row-label">BREACH SPEED</span><span class="stat-row-val" id="cs-speed">1.0x</span></div>
-            <div class="stat-row"><span class="stat-row-label">TRACE SHIELD</span><span class="stat-row-val" id="cs-shield">0%</span></div>
-            <div class="stat-row"><span class="stat-row-label">AUTO-SOLVE</span><span class="stat-row-val" id="cs-auto">NO</span></div>
-            <div class="stat-row"><span class="stat-row-label">BONUS REVEAL</span><span class="stat-row-val" id="cs-bonus">NO</span></div>
+            <div class="sp-title">CONSUMABLE STOCK</div>
+            <div id="stock-list" style="font-size:10px;color:var(--text-dim);line-height:2">No consumables.</div>
           </div>
           <div class="sidebar-panel">
-            <div class="sp-title">ACTIVE TOOLS</div>
-            <div id="active-tools-list" style="font-size:10px;color:var(--text-dim);line-height:2">No tools equipped.</div>
-          </div>
-          <div class="sidebar-panel">
-            <div class="sp-title">TRACE MODIFIER</div>
-            <div style="font-size:22px;font-family:var(--font-display);color:var(--amber)" id="trace-mod">1.0x</div>
-            <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Ghost Proxy reduces this</div>
+            <div class="sp-title">PERMANENT TOOLS</div>
+            <div id="perm-list" style="font-size:10px;color:var(--text-dim);line-height:2">None installed.</div>
           </div>
         </div>
       </div>
@@ -1030,7 +1096,10 @@ body::after {
     <div id="mission-screen" class="screen">
       <div class="mission-header">
         <div class="mission-title" id="m-title">MISSION RUNNING</div>
-        <div class="mission-timer" id="m-timer">00:00</div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div id="minigame-progress" style="display:flex;gap:6px;align-items:center"></div>
+          <div class="mission-timer" id="m-timer">00:00</div>
+        </div>
       </div>
       <div class="mission-panels">
         <div class="trace-panel">
@@ -1054,7 +1123,7 @@ body::after {
           <div id="minigame-area"></div>
         </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
         <div style="font-size:10px;color:var(--text-dim);margin-right:4px">DEPLOY:</div>
         <div class="tool-deploy-bar" id="tool-deploy-bar"></div>
       </div>
@@ -1063,7 +1132,7 @@ body::after {
     <!-- BLACK MARKET -->
     <div id="market-screen" class="screen">
       <div class="screen-header">BLACK MARKET</div>
-      <div class="screen-sub">UNDERGROUND TECH EXCHANGE // ACCESS LEVEL: <span id="access-level">2</span></div>
+      <div class="screen-sub">CONSUMABLES: SINGLE USE PER STAGE, STACKABLE &nbsp;|&nbsp; PERMANENT: BUY ONCE, ALWAYS ACTIVE</div>
       <div class="market-grid">
         <div class="tool-cards" id="tool-cards"></div>
         <div>
@@ -1082,7 +1151,7 @@ body::after {
     <!-- INVENTORY -->
     <div id="inventory-screen" class="screen">
       <div class="screen-header">INVENTORY / LOADOUT</div>
-      <div class="screen-sub">INSTALLED TOOLS AND MODULES</div>
+      <div class="screen-sub">PERMANENT TOOLS + CONSUMABLE STOCKPILE</div>
       <div class="inventory-layout">
         <div>
           <div style="font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:8px">INSTALLED MODULES</div>
@@ -1342,180 +1411,131 @@ body::after {
 
 <script>
 // ============================================================
-// GAME STATE
+// STATE
 // ============================================================
 const G = {
-  cc: 250,
-  xp: 0,
-  lvl: 1,
-  rep: 0,
-  contractsRun: 0,
-  contractsWon: 0,
-  totalEarned: 0,
-  inventory: [], // tool ids
-  neuralKitCharges: 0,
-  currentMission: null,
-  missionInterval: null,
-  history: [],
-  skills: { breach: 10, stealth: 5, decrypt: 8, exploit: 3 },
-  achievements: {}
+  cc:250, xp:0, lvl:1, rep:0,
+  contractsRun:0, contractsWon:0, totalEarned:0,
+  inventory:[], stock:{},
+  currentMission:null, missionInterval:null,
+  history:[], skills:{breach:10,stealth:5,decrypt:8,exploit:3}, achievements:{}
 };
 
 // ============================================================
 // DATA
 // ============================================================
 const TOOLS = [
-  { id: 'ice_spike', name: 'ICE Spike v2', icon: '⚡', cost: 200, desc: 'Advanced intrusion countermeasure eliminator. Reduces breach time by 20%.', effect: 'Breach speed +20%', stat: 'speedMult', val: 0.2 },
-  { id: 'quantum_hash', name: 'Quantum Hash Cracker', icon: '🔮', cost: 500, desc: 'Brute-force quantum decryption module. Unlocks HARD tier contracts.', effect: 'Unlocks Hard contracts', stat: 'unlockHard', val: true },
-  { id: 'ghost_proxy', name: 'Ghost Proxy Mesh', icon: '🕸', cost: 350, desc: 'Multi-layered anonymization network. Reduces trace accumulation by 35%.', effect: 'Trace rate −35%', stat: 'traceMult', val: -0.35 },
-  { id: 'neural_kit', name: 'Neural Scripting Kit', icon: '🧠', cost: 150, desc: 'AI-assisted payload automation. Single-use charge — manually deploy during a mission to instantly solve the puzzle. Stackable.', effect: 'Manual puzzle solve (1 charge)', stat: 'autoSolve', val: true },
-  { id: 'blacklight', name: 'Blacklight Scanner', icon: '🔦', cost: 250, desc: 'Deep packet inspection suite. Reveals hidden contract bonuses.', effect: 'Bonus rewards visible', stat: 'revealBonus', val: true },
-  { id: 'darkwire', name: 'DarkWire Tap', icon: '📡', cost: 180, desc: 'Passive network infiltrator. Generates 5 CC per minute passively.', effect: 'Passive income +5 CC/min', stat: 'passive', val: 5 },
-  { id: 'mirror_vm', name: 'Mirror VM Stack', icon: '🪞', cost: 420, desc: 'Decoy virtual machine cluster. Buys 30s extra before trace completes.', effect: 'Trace timer +30s', stat: 'traceBonus', val: 30 },
-  { id: 'zero_day', name: 'Zero Day Exploit', icon: '💀', cost: 750, desc: 'Rare unpatched vulnerability. Guarantees mission success once.', effect: 'One-time guaranteed win', stat: 'guarantee', val: 1 },
+  {id:'ice_spike',    name:'ICE Spike v2',         icon:'⚡',cost:200,consumable:true,  desc:'Advanced ICE eliminator. Deploy on one stage: +25% breach progress instantly.', effect:'Breach +25% (one stage)'},
+  {id:'quantum_hash', name:'Quantum Hash Cracker',  icon:'🔮',cost:500,consumable:false, desc:'Quantum decryption module. Permanently unlocks HARD tier contracts once purchased.', effect:'Unlocks Hard contracts (permanent)'},
+  {id:'ghost_proxy',  name:'Ghost Proxy Mesh',      icon:'🕸',cost:350,consumable:true,  desc:'Multi-layer anonymizer. Deploy on one stage: halves trace accumulation for that stage.', effect:'Trace rate -50% (one stage)'},
+  {id:'neural_kit',   name:'Neural Scripting Kit',  icon:'🧠',cost:150,consumable:true,  desc:'AI payload automation. Deploy on one stage: instantly auto-solves the mini-game.', effect:'Auto-solve mini-game (one stage)'},
+  {id:'blacklight',   name:'Blacklight Scanner',    icon:'🔦',cost:250,consumable:true,  desc:'Deep packet inspector. Deploy on one stage: reveals and earns the hidden bonus CC.', effect:'Reveal + earn bonus CC (one stage)'},
+  {id:'darkwire',     name:'DarkWire Tap',          icon:'📡',cost:180,consumable:false, desc:'Passive network infiltrator. Permanently generates +5 CC per minute in the background.', effect:'Passive +5 CC/min (permanent)'},
+  {id:'mirror_vm',    name:'Mirror VM Stack',       icon:'🪞',cost:420,consumable:true,  desc:'Decoy VM cluster. Deploy on one stage: adds +20 bonus seconds to that stage timer.', effect:'+20s timer (one stage)'},
+  {id:'zero_day',     name:'Zero Day Exploit',      icon:'💀',cost:750,consumable:true,  desc:'Rare unpatched exploit. Deploy on one stage: skips it entirely, counted as complete.', effect:'Skip one stage entirely'},
 ];
 
+const MINIGAME_TYPES = ['cipher','symbols','binary','typing','sequence','wire'];
+
 const CONTRACT_TYPES = [
-  { id: 'recon', name: 'Recon Sweep', target: 'HelixCorp Node', diff: 1, reward: 80, bonus: 20, time: 30, trace: 0.4, type: 'RECON', risk: 'LOW', req: [], desc: 'Passive scan of a corporate node for vulnerabilities. Low exposure, quick turnaround.', game: 'cipher' },
-  { id: 'data_ex', name: 'Data Extraction', target: 'Nexus Archive', diff: 2, reward: 180, bonus: 40, time: 45, trace: 0.6, type: 'DATA EX', risk: 'MEDIUM', req: [], desc: 'Simulated file retrieval from a secured data partition. Expect light countermeasures.', game: 'symbols' },
-  { id: 'fw_breach', name: 'Firewall Breach', target: 'Axiom Data Vault', diff: 3, reward: 320, bonus: 80, time: 55, trace: 0.85, type: 'BREACH', risk: 'HIGH', req: ['ice_spike'], desc: 'Forced entry through an enterprise-grade firewall. Requires ICE Spike v2.', game: 'symbols' },
-  { id: 'crypto_heist', name: 'Crypto Heist', target: 'Elysium Exchange', diff: 4, reward: 550, bonus: 120, time: 65, trace: 1.1, type: 'HEIST', risk: 'EXTREME', req: ['quantum_hash'], desc: 'Full asset exfiltration from a live crypto exchange. Intense trace countermeasures active.', game: 'cipher' },
-  { id: 'ghost_contract', name: 'Ghost Contract', target: '█████████', diff: 3, reward: 0, bonus: 0, time: 50, trace: 0.75, type: 'GHOST', risk: 'UNKNOWN', req: [], desc: 'Classified directive. Target and reward undisclosed until mission complete. High variance.', game: 'symbols', ghost: true },
-  { id: 'recon2', name: 'Node Sweep', target: 'TitanSoft Dev Cluster', diff: 1, reward: 60, bonus: 15, time: 25, trace: 0.3, type: 'RECON', risk: 'LOW', req: [], desc: 'Quick sweep of a development node. Entry-level contract.', game: 'cipher' },
-  { id: 'siphon', name: 'Credit Siphon', target: 'Meridian Bank API', diff: 2, reward: 200, bonus: 50, time: 40, trace: 0.65, type: 'SIPHON', risk: 'MEDIUM', req: [], desc: 'API-level credit redirection. Medium risk, clean vector.', game: 'symbols' },
-  { id: 'blacksite', name: 'Blacksite Infiltration', target: 'Umbra Research Facility', diff: 4, reward: 480, bonus: 100, time: 60, trace: 1.0, type: 'INFILTRATE', risk: 'EXTREME', req: ['quantum_hash', 'ghost_proxy'], desc: 'Deep network penetration of a classified research facility. Two advanced tools required.', game: 'symbols' },
+  {id:'recon2',    name:'Node Sweep',            target:'TitanSoft Dev Cluster',    diff:1, reward:60,  bonus:15,  timePerGame:35, trace:0.30, type:'RECON',      risk:'LOW',     req:[],                          desc:'Quick sweep of a development node. Entry-level contract.', ghost:false},
+  {id:'recon',     name:'Recon Sweep',           target:'HelixCorp Node',           diff:1, reward:80,  bonus:20,  timePerGame:32, trace:0.35, type:'RECON',      risk:'LOW',     req:[],                          desc:'Passive scan of a corporate node for vulnerabilities.', ghost:false},
+  {id:'data_ex',   name:'Data Extraction',       target:'Nexus Archive',            diff:2, reward:180, bonus:40,  timePerGame:40, trace:0.50, type:'DATA EX',    risk:'MEDIUM',  req:[],                          desc:'Simulated file retrieval from a secured data partition.', ghost:false},
+  {id:'siphon',    name:'Credit Siphon',         target:'Meridian Bank API',        diff:2, reward:200, bonus:50,  timePerGame:38, trace:0.55, type:'SIPHON',     risk:'MEDIUM',  req:[],                          desc:'API-level credit redirection. Medium risk, clean vector.', ghost:false},
+  {id:'ghost_c',   name:'Ghost Contract',        target:'#########',                diff:3, reward:0,   bonus:0,   timePerGame:42, trace:0.65, type:'GHOST',      risk:'UNKNOWN', req:[],                          desc:'Classified directive. Target and reward undisclosed. High variance.', ghost:true},
+  {id:'fw_breach', name:'Firewall Breach',       target:'Axiom Data Vault',         diff:3, reward:320, bonus:80,  timePerGame:45, trace:0.75, type:'BREACH',     risk:'HIGH',    req:['quantum_hash'],             desc:'Forced entry through an enterprise-grade firewall.', ghost:false},
+  {id:'crypto',    name:'Crypto Heist',          target:'Elysium Exchange',         diff:4, reward:550, bonus:120, timePerGame:50, trace:0.90, type:'HEIST',      risk:'EXTREME', req:['quantum_hash'],             desc:'Full asset exfiltration from a live crypto exchange.', ghost:false},
+  {id:'blacksite', name:'Blacksite Infiltration',target:'Umbra Research Facility',  diff:4, reward:480, bonus:100, timePerGame:48, trace:0.85, type:'INFILTRATE', risk:'EXTREME', req:['quantum_hash','ghost_proxy'],desc:'Deep network penetration of a classified research facility.', ghost:false},
 ];
 
 const TERMINAL_BOOT = [
-  '[BOOT] GHOSTNODE OS v1.3.7 initializing...',
-  '[BOOT] Loading kernel modules...',
-  '[NET] Establishing encrypted tunnel...',
-  '[NET] Ghost Proxy Mesh: checking status...',
-  '[SYS] Memory allocation: 512MB / 1024MB',
-  '[AUTH] Operator credentials verified.',
-  '[NET] Connected to darknet relay node #7.',
-  '[SYS] Boot sequence complete. Welcome, ghost_0x.',
+  '[BOOT] GHOSTNODE OS v1.3.7 initializing...','[BOOT] Loading kernel modules...',
+  '[NET] Establishing encrypted tunnel...','[NET] Ghost Proxy Mesh: checking status...',
+  '[SYS] Memory allocation: 512MB / 1024MB','[AUTH] Operator credentials verified.',
+  '[NET] Connected to darknet relay node #7.','[SYS] Boot sequence complete. Welcome, ghost_0x.',
   '[NET] Awaiting directives...',
 ];
-
 const LOG_LINES = [
-  '[SCAN] Mapping target node architecture...',
-  '[BREACH] Injecting payload layer 1...',
-  '[SCAN] Identifying open ports: 22, 80, 443, 8080',
-  '[DECRYPT] Running hash collision algorithm...',
-  '[NET] Routing through relay #3...',
-  '[BREACH] ICE countermeasures detected — bypassing...',
-  '[SCAN] Extracting directory structure...',
-  '[BREACH] Kernel buffer overflow initiated...',
-  '[DECRYPT] Cipher block chaining: 34% complete...',
-  '[NET] Spoofing MAC address...',
-  '[BREACH] Privilege escalation: success.',
-  '[SCAN] Locating target data partition...',
-  '[DECRYPT] AES-256 decrypt in progress...',
-  '[NET] Null-routing trace packet...',
-  '[BREACH] Injecting final payload...',
-  '[SCAN] Exfiltrating data stream...',
+  '[SCAN] Mapping target node architecture...','[BREACH] Injecting payload layer 1...',
+  '[SCAN] Identifying open ports: 22, 80, 443, 8080','[DECRYPT] Running hash collision algorithm...',
+  '[NET] Routing through relay #3...','[BREACH] ICE countermeasures detected -- bypassing...',
+  '[SCAN] Extracting directory structure...','[BREACH] Kernel buffer overflow initiated...',
+  '[DECRYPT] Cipher block chaining: 34% complete...','[NET] Spoofing MAC address...',
+  '[BREACH] Privilege escalation: success.','[SCAN] Locating target data partition...',
+  '[DECRYPT] AES-256 decrypt in progress...','[NET] Null-routing trace packet...',
+  '[BREACH] Injecting final payload...','[SCAN] Exfiltrating data stream...',
 ];
-
-const BREACH_STAGES = [
-  'INITIALIZING VECTOR...',
-  'SCANNING NODE PERIMETER...',
-  'PROBING OPEN PORTS...',
-  'INJECTING PAYLOAD...',
-  'BYPASSING ICE LAYER...',
-  'ESCALATING PRIVILEGES...',
-  'EXTRACTING DATA STREAM...',
-  'COVERING TRACKS...',
-  'FINALIZING EXTRACTION...',
-];
-
-// Glyphs for symbol game
-const GLYPHS = ['Ψ','Ω','Δ','Λ','Σ','Φ','Π','Θ','Ξ','Γ','ℵ','℃'];
+const BREACH_STAGES = ['INITIALIZING VECTOR...','SCANNING NODE PERIMETER...','PROBING OPEN PORTS...','INJECTING PAYLOAD...','BYPASSING ICE LAYER...','ESCALATING PRIVILEGES...','EXTRACTING DATA STREAM...','COVERING TRACKS...','FINALIZING EXTRACTION...'];
+const GLYPHS = ['Y','O','A','L','E','F','P','T','X','G','N','C'];
 
 // ============================================================
 // TERMINAL
 // ============================================================
 const termOut = document.getElementById('terminal-output');
-
-function termLog(msg, cls = 't-system') {
+function termLog(msg, cls) {
+  cls = cls || 't-system';
   const el = document.createElement('div');
   el.className = 't-line ' + cls;
   el.textContent = msg;
   termOut.appendChild(el);
   termOut.scrollTop = termOut.scrollHeight;
 }
-
 async function bootSequence() {
   for (let i = 0; i < TERMINAL_BOOT.length; i++) {
     await delay(120 + Math.random() * 80);
-    const cls = i === TERMINAL_BOOT.length - 1 ? 't-success' : (i < 3 ? 't-info' : 't-system');
+    var cls = i === TERMINAL_BOOT.length - 1 ? 't-success' : (i < 3 ? 't-info' : 't-system');
     termLog(TERMINAL_BOOT[i], cls);
   }
   termLog('');
   setTimeout(randomTerminalActivity, 3000);
 }
-
 function randomTerminalActivity() {
   if (G.currentMission) return;
-  const msgs = [
-    { text: '[NET] Darknet relay heartbeat: OK', cls: 't-system' },
-    { text: '[SYS] Garbage collection: cleared 12MB', cls: 't-system' },
-    { text: '[WARN] Unknown probe detected on relay #2 — rerouting.', cls: 't-warn' },
-    { text: '[NET] Encrypted channel refreshed.', cls: 't-info' },
-    { text: '[SYS] Ghost Proxy Mesh: rotating nodes...', cls: 't-system' },
-    { text: '[NET] DarkWire passive monitor: nominal', cls: 't-system' },
+  var msgs = [
+    {text:'[NET] Darknet relay heartbeat: OK',cls:'t-system'},
+    {text:'[SYS] Garbage collection: cleared 12MB',cls:'t-system'},
+    {text:'[WARN] Unknown probe detected on relay #2 -- rerouting.',cls:'t-warn'},
+    {text:'[NET] Encrypted channel refreshed.',cls:'t-info'},
+    {text:'[SYS] Ghost Proxy Mesh: rotating nodes...',cls:'t-system'},
+    {text:'[NET] DarkWire passive monitor: nominal',cls:'t-system'},
   ];
-  const m = msgs[Math.floor(Math.random() * msgs.length)];
+  var m = msgs[Math.floor(Math.random() * msgs.length)];
   termLog(m.text, m.cls);
   setTimeout(randomTerminalActivity, 4000 + Math.random() * 8000);
 }
-
-document.getElementById('fake-input').addEventListener('keydown', e => {
+document.getElementById('fake-input').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
-    const val = e.target.value.trim().toLowerCase();
+    var val = e.target.value.trim().toLowerCase();
     e.target.value = '';
     handleCommand(val);
   }
 });
-
-const COMMANDS = {
-  help: () => {
-    termLog('[HELP] Available commands:', 't-info');
-    termLog('  contracts  — view available contracts', 't-system');
-    termLog('  market     — open black market', 't-system');
-    termLog('  inventory  — view installed tools', 't-system');
-    termLog('  status     — show operator status', 't-system');
-    termLog('  clear      — clear terminal', 't-system');
+var COMMANDS = {
+  help: function() { termLog('[HELP] Commands: contracts, market, inventory, status, clear', 't-info'); },
+  contracts: function() { navTo('contracts'); },
+  market: function() { navTo('market'); },
+  inventory: function() { navTo('inventory'); },
+  status: function() {
+    var ts = Object.values(G.stock).reduce(function(a,b){return a+b;}, 0);
+    termLog('[STATUS] ghost_0x | Lvl ' + G.lvl + ' | ' + G.cc + ' CC | Runs: ' + G.contractsRun, 't-info');
+    termLog('[STATUS] Permanent: ' + G.inventory.length + ' | Consumable charges: ' + ts, 't-info');
   },
-  contracts: () => { navTo('contracts'); },
-  market: () => { navTo('market'); },
-  inventory: () => { navTo('inventory'); },
-  status: () => {
-    termLog(`[STATUS] Operator: ghost_0x | Level: ${G.lvl} | CC: ${G.cc}`, 't-info');
-    termLog(`[STATUS] Tools: ${G.inventory.length} | Contracts run: ${G.contractsRun}`, 't-info');
-  },
-  clear: () => { termOut.innerHTML = ''; },
+  clear: function() { termOut.innerHTML = ''; }
 };
-
 function handleCommand(cmd) {
-  termLog(`ghost_0x@node:~$ ${cmd}`, 't-breach');
-  if (COMMANDS[cmd]) {
-    COMMANDS[cmd]();
-  } else if (cmd === '') {
-    // nothing
-  } else {
-    termLog(`[ERR] Unknown command: '${cmd}'. Type 'help'.`, 't-error');
-  }
+  termLog('ghost_0x@node:~$ ' + cmd, 't-breach');
+  if (COMMANDS[cmd]) COMMANDS[cmd]();
+  else if (cmd !== '') termLog('[ERR] Unknown: ' + cmd + '. Type help.', 't-error');
 }
 
 // ============================================================
 // NAVIGATION
 // ============================================================
 function navTo(name) {
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
-  const nav = document.querySelector(`.nav-item[data-screen="${name}"]`);
-  const scr = document.getElementById(`${name}-screen`);
+  document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.screen').forEach(function(el) { el.classList.remove('active'); });
+  var nav = document.querySelector('.nav-item[data-screen="' + name + '"]');
+  var scr = document.getElementById(name + '-screen');
   if (nav) nav.classList.add('active');
   if (scr) scr.classList.add('active');
   if (name === 'market') renderMarket();
@@ -1524,367 +1544,607 @@ function navTo(name) {
   if (name === 'system') renderSystem();
   if (name === 'terminal') document.getElementById('fake-input').focus();
   if (name === 'guide') {
-    document.querySelectorAll('.guide-toc-item').forEach(a => {
-      a.onclick = e => {
+    document.querySelectorAll('.guide-toc-item').forEach(function(a) {
+      a.onclick = function(e) {
         e.preventDefault();
-        const target = document.getElementById(a.getAttribute('href').replace('#',''));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var target = document.getElementById(a.getAttribute('href').replace('#',''));
+        if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
       };
     });
   }
 }
-
-document.querySelectorAll('.nav-item').forEach(el => {
-  el.addEventListener('click', () => navTo(el.dataset.screen));
+document.querySelectorAll('.nav-item').forEach(function(el) {
+  el.addEventListener('click', function() { navTo(el.dataset.screen); });
 });
 
 // ============================================================
-// CONTRACTS
+// STOCK HELPERS
 // ============================================================
-function getPlayerStats() {
-  const inv = G.inventory;
-  const hasIce = inv.includes('ice_spike');
-  const hasProxy = inv.includes('ghost_proxy');
-  const hasQuantum = inv.includes('quantum_hash');
-  const hasBlack = inv.includes('blacklight');
-  const hasMirror = inv.includes('mirror_vm');
-  return {
-    speedMult: 1 + (hasIce ? 0.2 : 0),
-    traceMult: 1 + (hasProxy ? -0.35 : 0),
-    revealBonus: hasBlack,
-    unlockHard: hasQuantum,
-    traceBonus: hasMirror ? 30 : 0,
-  };
-}
+function getStock(id) { return G.stock[id] || 0; }
+function useStock(id) { if (G.stock[id] > 0) { G.stock[id]--; updateHUD(); } }
+function totalItems() { return G.inventory.length + Object.values(G.stock).reduce(function(a,b){return a+b;}, 0); }
 
+// ============================================================
+// CONTRACTS SCREEN
+// ============================================================
 function renderContracts() {
-  const stats = getPlayerStats();
-  document.getElementById('cs-speed').textContent = stats.speedMult.toFixed(1) + 'x';
-  document.getElementById('cs-shield').textContent = stats.traceMult < 1 ? Math.round((1 - stats.traceMult) * 100) + '%' : '0%';
-  document.getElementById('cs-auto').textContent = G.neuralKitCharges > 0 ? `x${G.neuralKitCharges}` : 'NONE';
-  document.getElementById('cs-bonus').textContent = stats.revealBonus ? 'YES' : 'NO';
-  document.getElementById('trace-mod').textContent = stats.traceMult.toFixed(2) + 'x';
+  var stockEl = document.getElementById('stock-list');
+  var cons = TOOLS.filter(function(t) { return t.consumable && getStock(t.id) > 0; });
+  stockEl.innerHTML = cons.length
+    ? cons.map(function(t) { return '<div>' + t.icon + ' ' + t.name + ' <span style="color:var(--amber)">x' + getStock(t.id) + '</span></div>'; }).join('')
+    : 'No consumables.';
 
-  const toolList = document.getElementById('active-tools-list');
-  if (G.inventory.length === 0 && G.neuralKitCharges === 0) {
-    toolList.innerHTML = 'No tools installed.';
-  } else {
-    const lines = G.inventory.map(id => {
-      const t = TOOLS.find(t => t.id === id);
-      if (t.id === 'neural_kit') return null; // shown separately
-      return `<div>${t.icon} ${t.name}</div>`;
-    }).filter(Boolean);
-    if (G.neuralKitCharges > 0) lines.push(`<div>🧠 Neural Kit <span style="color:var(--amber)">x${G.neuralKitCharges}</span></div>`);
-    toolList.innerHTML = lines.length ? lines.join('') : 'No tools installed.';
-  }
+  var permEl = document.getElementById('perm-list');
+  permEl.innerHTML = G.inventory.length
+    ? G.inventory.map(function(id) {
+        var t = TOOLS.find(function(t){return t.id===id;});
+        return '<div>' + t.icon + ' ' + t.name + ' <span style="color:var(--blue);font-size:9px">ACTIVE</span></div>';
+      }).join('')
+    : 'None installed.';
 
-  const list = document.getElementById('contract-list');
+  var list = document.getElementById('contract-list');
   list.innerHTML = '';
-  CONTRACT_TYPES.forEach(c => {
-    const locked = c.req.some(r => !G.inventory.includes(r));
-    const card = document.createElement('div');
+  CONTRACT_TYPES.forEach(function(c) {
+    var locked = c.req.some(function(r) {
+      var t = TOOLS.find(function(t){return t.id===r;});
+      if (!t) return true;
+      return t.consumable ? getStock(r) <= 0 : !G.inventory.includes(r);
+    });
+    var card = document.createElement('div');
     card.className = 'contract-card' + (locked ? ' locked' : '');
-
-    const stars = Array.from({length: 5}, (_, i) =>
-      `<span class="star ${i < c.diff ? 'filled' : 'empty'}">${i < c.diff ? '★' : '☆'}</span>`
-    ).join('');
-
-    let reward = c.ghost ? '???–500' : c.reward;
-    if (stats.revealBonus && !c.ghost) reward = c.reward + c.bonus;
-
-    const reqText = c.req.length ? `<div class="cc-req">⚠ REQUIRES: ${c.req.map(r => TOOLS.find(t=>t.id===r)?.name).join(', ')}</div>` : '';
-
-    card.innerHTML = `
-      <div class="cc-header">
-        <div class="cc-title">${c.name}: ${c.target}</div>
-        <div class="cc-diff">${stars}</div>
-      </div>
-      <div class="cc-meta">
-        <span class="cc-reward">⬡ ${reward} CC</span>
-        <span class="cc-type">[${c.type}]</span>
-        <span class="cc-risk">RISK: ${c.risk}</span>
-      </div>
-      <div class="cc-desc">${c.desc}</div>
-      ${reqText}
-      <button class="btn ${locked ? 'btn-locked' : 'btn-blue'} btn-sm" ${locked ? 'disabled' : ''}>${locked ? '[LOCKED]' : '[ACCEPT CONTRACT]'}</button>
-    `;
+    var stars = Array.from({length:5}, function(_,i) {
+      return '<span class="star ' + (i < c.diff ? 'filled' : 'empty') + '">' + (i < c.diff ? '\u2605' : '\u2606') + '</span>';
+    }).join('');
+    var showBonus = getStock('blacklight') > 0 && !c.ghost;
+    var rewardText = c.ghost ? '???-550 CC' : (c.reward + (showBonus ? '+' + c.bonus : '') + ' CC');
+    var reqText = c.req.length
+      ? '<div class="cc-req">REQ: ' + c.req.map(function(r){var t=TOOLS.find(function(t){return t.id===r;});return t?t.name:r;}).join(', ') + '</div>'
+      : '';
+    card.innerHTML = '<div class="cc-header"><div class="cc-title">' + c.name + ': ' + c.target + '</div><div class="cc-diff">' + stars + '</div></div>'
+      + '<div class="cc-meta"><span class="cc-reward">\u29e1 ' + rewardText + '</span><span class="cc-type">[' + c.type + ']</span><span class="cc-risk">RISK: ' + c.risk + '</span><span style="color:var(--text-dim)">' + c.diff + ' STAGE' + (c.diff>1?'S':'') + '</span></div>'
+      + '<div class="cc-desc">' + c.desc + '</div>'
+      + reqText
+      + '<button class="btn ' + (locked ? 'btn-locked' : 'btn-blue') + ' btn-sm" ' + (locked ? 'disabled' : '') + '>' + (locked ? '[LOCKED]' : '[ACCEPT CONTRACT]') + '</button>';
     if (!locked) {
-      card.querySelector('button').addEventListener('click', () => startMission(c));
+      (function(contract) {
+        card.querySelector('button').addEventListener('click', function() { startMission(contract); });
+      })(c);
     }
     list.appendChild(card);
   });
 }
 
 // ============================================================
-// MISSION
+// MISSION ENGINE
 // ============================================================
 function startMission(contract) {
-  G.currentMission = { ...contract, traceVal: 0, breachVal: 0, elapsed: 0, logTimer: 0, logIdx: 0, stageIdx: 0, success: false };
+  var shuffled = MINIGAME_TYPES.slice().sort(function() { return Math.random() - 0.5; });
+  var gameQueue = shuffled.slice(0, contract.diff);
+  G.currentMission = Object.assign({}, contract, {
+    gameQueue: gameQueue, gameIdx: 0, gamesWon: 0,
+    traceVal: 0, timeLeft: contract.timePerGame,
+    logTimer: 0, logIdx: 0, bonusEarned: false,
+    stageTraceMult: 1, stageSolved: false
+  });
   navTo('mission');
   setStatus('RUNNING CONTRACT');
-
-  const m = G.currentMission;
-  const stats = getPlayerStats();
-
-  // Setup UI
-  document.getElementById('m-title').textContent = `${contract.type}: ${contract.target.toUpperCase()}`;
+  document.getElementById('m-title').textContent = contract.type + ': ' + contract.target.toUpperCase();
   document.getElementById('trace-fill').style.height = '0%';
-  document.getElementById('breach-bar').style.width = '0%';
-  document.getElementById('breach-pct').textContent = '0%';
-  document.getElementById('breach-label').textContent = 'INITIALIZING...';
+  document.getElementById('trace-pct-val').textContent = '0';
   document.getElementById('mission-log').innerHTML = '';
-  document.getElementById('minigame-area').innerHTML = '';
-  document.getElementById('minigame-title').textContent = contract.game === 'cipher' ? 'CIPHER DECODE' : 'NODE MAPPING';
-
-  // Setup tool deploy buttons
-  const bar = document.getElementById('tool-deploy-bar');
-  bar.innerHTML = '';
-  if (G.inventory.includes('ice_spike')) {
-    const b = deployBtn('⚡ Boost Spike', () => { m.breachVal = Math.min(100, m.breachVal + 15); notify('ICE Spike activated! +15% breach'); b.disabled = true; });
-    bar.appendChild(b);
-  }
-  if (G.inventory.includes('ghost_proxy')) {
-    const b = deployBtn('🕸 Deploy Proxy', () => { m.traceVal = Math.max(0, m.traceVal - 20); notify('Ghost Proxy deployed! Trace −20%'); b.disabled = true; });
-    bar.appendChild(b);
-  }
-  if (G.inventory.includes('mirror_vm')) {
-    const b = deployBtn('🪞 Mirror Decoy', () => { m.traceVal = Math.max(0, m.traceVal - 30); notify('Mirror VM deployed! Trace −30%'); b.disabled = true; });
-    bar.appendChild(b);
-  }
-  if (G.neuralKitCharges > 0) {
-    const updateNeuralBtn = () => {
-      neuralBtn.textContent = `🧠 Neural Kit (x${G.neuralKitCharges})`;
-      neuralBtn.disabled = G.neuralKitCharges <= 0;
-    };
-    const neuralBtn = deployBtn(`🧠 Neural Kit (x${G.neuralKitCharges})`, () => {
-      if (G.neuralKitCharges <= 0) return;
-      G.neuralKitCharges--;
-      m.gameBonus = 25;
-      document.getElementById('minigame-area').innerHTML =
-        '<div style="color:var(--green);font-size:12px;margin-top:8px">✓ [NEURAL KIT] Puzzle auto-solved — breach bonus +25%</div>';
-      notify(`🧠 Neural Kit used! Charges remaining: ${G.neuralKitCharges}`);
-      termLog(`[NEURAL KIT] Charge consumed. ${G.neuralKitCharges} remaining.`, 't-info');
-      updateHUD();
-      neuralBtn.disabled = true;
-    });
-    bar.appendChild(neuralBtn);
-  }
-
-  // Timer
-  let timeLeft = contract.time + stats.traceBonus;
-  document.getElementById('m-timer').textContent = fmtTime(timeLeft);
-
-  // Start mini-game — always shown, Neural Kit is manual deploy
-  if (contract.game === 'cipher') {
-    setupCipherGame();
-  } else {
-    setupSymbolGame();
-  }
-
-  G.missionInterval = setInterval(() => {
-    timeLeft--;
-    document.getElementById('m-timer').textContent = fmtTime(timeLeft);
-
-    // Breach progress
-    const speedBonus = stats.speedMult;
-    const baseInc = (100 / contract.time) * speedBonus;
-    m.breachVal = Math.min(100, m.breachVal + baseInc);
-    m.breachVal = Math.min(100, m.breachVal + (m.gameBonus || 0) * 0.05);
-
-    document.getElementById('breach-bar').style.width = m.breachVal + '%';
-    document.getElementById('breach-pct').textContent = Math.round(m.breachVal) + '%';
-
-    // Stage label
-    const stageIdx = Math.floor((m.breachVal / 100) * BREACH_STAGES.length);
-    document.getElementById('breach-label').textContent = BREACH_STAGES[Math.min(stageIdx, BREACH_STAGES.length - 1)];
-
-    // Trace
-    const traceInc = (contract.trace * stats.traceMult) * (100 / (contract.time * 1.2));
-    m.traceVal = Math.min(100, m.traceVal + traceInc);
-    document.getElementById('trace-fill').style.height = m.traceVal + '%';
-    document.getElementById('trace-pct-val').textContent = Math.round(m.traceVal);
-
-    // Log lines
-    m.logTimer++;
-    if (m.logTimer % 3 === 0) {
-      const line = LOG_LINES[m.logIdx % LOG_LINES.length];
-      m.logIdx++;
-      missionLog(line, m.traceVal > 70 ? 't-warn' : 't-system');
-    }
-
-    // Check end conditions
-    if (m.breachVal >= 100 || timeLeft <= 0 || m.traceVal >= 100) {
-      clearInterval(G.missionInterval);
-      G.missionInterval = null;
-      const won = m.breachVal >= 100 && m.traceVal < 100;
-      endMission(won, contract, stats);
-    }
-  }, 1000);
+  updateProgressDots();
+  buildDeployBar();
+  launchStage();
+  G.missionInterval = setInterval(missionTick, 1000);
 }
 
-function deployBtn(label, fn) {
-  const b = document.createElement('button');
-  b.className = 'deploy-btn';
-  b.textContent = label;
-  b.addEventListener('click', fn);
-  return b;
+function updateProgressDots() {
+  var m = G.currentMission;
+  var wrap = document.getElementById('minigame-progress');
+  wrap.innerHTML = '';
+  for (var i = 0; i < m.gameQueue.length; i++) {
+    var dot = document.createElement('div');
+    dot.className = 'mg-dot';
+    if (i < m.gameIdx) dot.classList.add('done');
+    else if (i === m.gameIdx) dot.classList.add('active');
+    wrap.appendChild(dot);
+  }
+}
+
+function setDotState(idx, state) {
+  var dots = document.getElementById('minigame-progress').children;
+  if (!dots[idx]) return;
+  dots[idx].classList.remove('active','done','failed');
+  dots[idx].classList.add(state);
+  if (state === 'done' && dots[idx+1]) {
+    dots[idx+1].classList.remove('active');
+    dots[idx+1].classList.add('active');
+  }
+}
+
+function buildDeployBar() {
+  var bar = document.getElementById('tool-deploy-bar');
+  bar.innerHTML = '';
+  var cons = TOOLS.filter(function(t) { return t.consumable && getStock(t.id) > 0; });
+  if (!cons.length) {
+    bar.innerHTML = '<span style="font-size:10px;color:var(--text-dim)">No consumables in stock</span>';
+    return;
+  }
+  cons.forEach(function(tool) {
+    var btn = document.createElement('button');
+    btn.className = 'deploy-btn';
+    btn.textContent = tool.icon + ' ' + tool.name + ' (x' + getStock(tool.id) + ')';
+    (function(id) {
+      btn.addEventListener('click', function() {
+        if (getStock(id) <= 0) return;
+        useConsumable(id);
+        buildDeployBar();
+      });
+    })(tool.id);
+    bar.appendChild(btn);
+  });
+}
+
+function useConsumable(id) {
+  var m = G.currentMission;
+  if (!m) return;
+  useStock(id);
+  if (id === 'neural_kit') {
+    missionLog('[NEURAL KIT] AI script injected -- auto-solving.', 't-success');
+    notify('Neural Kit: Stage auto-solved!');
+    solveCurrentStage();
+  } else if (id === 'ice_spike') {
+    var cur = parseFloat(document.getElementById('breach-bar').style.width) || 0;
+    var nv = Math.min(100, cur + 25);
+    document.getElementById('breach-bar').style.width = nv + '%';
+    document.getElementById('breach-pct').textContent = Math.round(nv) + '%';
+    missionLog('[ICE SPIKE] Payload boost -- breach +25%.', 't-breach');
+    notify('ICE Spike: Breach +25%!');
+    if (nv >= 100) solveCurrentStage();
+  } else if (id === 'ghost_proxy') {
+    m.stageTraceMult = 0.5;
+    missionLog('[GHOST PROXY] Anonymization mesh active -- trace halved.', 't-info');
+    notify('Ghost Proxy: Trace rate -50% this stage!');
+  } else if (id === 'mirror_vm') {
+    m.timeLeft += 20;
+    document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
+    missionLog('[MIRROR VM] Decoy cluster online -- +20s added.', 't-info');
+    notify('Mirror VM: +20 seconds!');
+  } else if (id === 'blacklight') {
+    if (!m.bonusEarned) {
+      m.bonusEarned = true;
+      missionLog('[BLACKLIGHT] Hidden bonus unlocked: +' + m.bonus + ' CC on success.', 't-success');
+      notify('Blacklight: +' + m.bonus + ' CC bonus revealed!');
+    }
+  } else if (id === 'zero_day') {
+    missionLog('[ZERO DAY] Exploit fired -- stage bypassed.', 't-success');
+    notify('Zero Day: Stage skipped!');
+    solveCurrentStage();
+  }
+}
+
+function solveCurrentStage() {
+  var m = G.currentMission;
+  if (!m || m.stageSolved) return;
+  m.stageSolved = true;
+  document.getElementById('breach-bar').style.width = '100%';
+  document.getElementById('breach-pct').textContent = '100%';
+  document.getElementById('minigame-area').innerHTML = '<div style="color:var(--green);font-size:14px;padding:10px">STAGE COMPLETE</div>';
+}
+
+function launchStage() {
+  var m = G.currentMission;
+  m.stageSolved = false;
+  m.stageTraceMult = 1;
+  m.timeLeft = m.timePerGame;
+  document.getElementById('breach-bar').style.width = '0%';
+  document.getElementById('breach-pct').textContent = '0%';
+  document.getElementById('breach-label').textContent = 'AWAITING BREACH...';
+  document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
+  document.getElementById('minigame-area').innerHTML = '';
+  var gt = m.gameQueue[m.gameIdx];
+  document.getElementById('minigame-title').textContent = 'STAGE ' + (m.gameIdx+1) + '/' + m.gameQueue.length + ' -- ' + gt.toUpperCase();
+  missionLog('[STAGE ' + (m.gameIdx+1) + '] Initiating ' + gt + ' subsystem...', 't-info');
+  if (gt === 'cipher') setupCipherGame();
+  else if (gt === 'symbols') setupSymbolGame();
+  else if (gt === 'binary') setupBinaryGame();
+  else if (gt === 'typing') setupTypingGame();
+  else if (gt === 'sequence') setupSequenceGame();
+  else if (gt === 'wire') setupWireGame();
+  buildDeployBar();
+  updateProgressDots();
+}
+
+function missionTick() {
+  var m = G.currentMission;
+  if (!m) return;
+  m.timeLeft = Math.max(0, m.timeLeft - 1);
+  document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
+  var traceInc = (m.trace * m.stageTraceMult) * (100 / (m.timePerGame * 1.8));
+  m.traceVal = Math.min(100, m.traceVal + traceInc);
+  document.getElementById('trace-fill').style.height = m.traceVal + '%';
+  document.getElementById('trace-pct-val').textContent = Math.round(m.traceVal);
+  m.logTimer++;
+  if (m.logTimer % 4 === 0) {
+    missionLog(LOG_LINES[m.logIdx % LOG_LINES.length], m.traceVal > 70 ? 't-warn' : 't-system');
+    m.logIdx++;
+  }
+  var elapsed = m.timePerGame - m.timeLeft;
+  var creep = Math.min(92, (elapsed / m.timePerGame) * 92);
+  var curW = parseFloat(document.getElementById('breach-bar').style.width) || 0;
+  if (!m.stageSolved && curW < 100) {
+    var nw = Math.max(curW, creep);
+    document.getElementById('breach-bar').style.width = nw + '%';
+    document.getElementById('breach-pct').textContent = Math.round(nw) + '%';
+    var si = Math.floor((nw / 100) * BREACH_STAGES.length);
+    document.getElementById('breach-label').textContent = BREACH_STAGES[Math.min(si, BREACH_STAGES.length - 1)];
+  }
+  if (m.traceVal >= 100) {
+    clearInterval(G.missionInterval); G.missionInterval = null;
+    endMission(false, 'TRACE OVERLOAD');
+    return;
+  }
+  var stageDone = m.stageSolved || parseFloat(document.getElementById('breach-bar').style.width) >= 100;
+  var stageTimeout = m.timeLeft <= 0;
+  if (stageDone || stageTimeout) {
+    if (stageDone) {
+      m.gamesWon++;
+      setDotState(m.gameIdx, 'done');
+      missionLog('[STAGE ' + (m.gameIdx+1) + '] Complete.', 't-success');
+    } else {
+      setDotState(m.gameIdx, 'failed');
+      missionLog('[STAGE ' + (m.gameIdx+1) + '] Timed out.', 't-error');
+    }
+    m.gameIdx++;
+    if (m.gameIdx >= m.gameQueue.length) {
+      clearInterval(G.missionInterval); G.missionInterval = null;
+      var won = m.gamesWon === m.gameQueue.length;
+      endMission(won, won ? null : 'INCOMPLETE STAGES');
+    } else {
+      setTimeout(launchStage, 700);
+    }
+  }
 }
 
 function missionLog(msg, cls) {
-  const log = document.getElementById('mission-log');
-  const el = document.createElement('div');
-  el.className = 't-line ' + cls;
+  var log = document.getElementById('mission-log');
+  var el = document.createElement('div');
+  el.className = 't-line ' + (cls || 't-system');
   el.textContent = msg;
   log.appendChild(el);
   log.scrollTop = log.scrollHeight;
 }
 
-function endMission(won, contract, stats) {
+function endMission(won, failReason) {
+  var contract = G.currentMission || {};
   G.contractsRun++;
   G.currentMission = null;
   setStatus('IDLE');
-
-  let earned = 0;
+  var earned = 0;
   if (won) {
     G.contractsWon++;
     earned = contract.ghost ? (100 + Math.floor(Math.random() * 450)) : contract.reward;
-    if (stats.revealBonus && !contract.ghost) earned += contract.bonus;
-    if (G.inventory.includes('zero_day') && !G._zeroUsed) { earned = Math.round(earned * 1.5); G._zeroUsed = true; }
+    if (contract.bonusEarned && !contract.ghost) earned += (contract.bonus || 0);
     G.cc += earned;
     G.totalEarned += earned;
-    G.xp += Math.round(earned * 0.3 + contract.diff * 10);
-    G.rep = Math.min(100, G.rep + contract.diff * 5);
-    updateSkills(contract);
+    G.xp += Math.round(earned * 0.3 + (contract.diff || 1) * 10);
+    G.rep = Math.min(100, G.rep + (contract.diff || 1) * 5);
+    G.skills.breach = Math.min(100, G.skills.breach + (contract.diff || 1) * 2);
+    G.skills.stealth = Math.min(100, G.skills.stealth + 1);
+    G.skills.decrypt = Math.min(100, G.skills.decrypt + 2);
+    G.skills.exploit = Math.min(100, G.skills.exploit + (contract.diff || 1));
     checkLevel();
     checkAchievements();
   }
-
-  G.history.unshift({ name: contract.name, target: contract.target, won, earned, time: new Date().toLocaleTimeString() });
-
+  G.history.unshift({name: contract.name || '?', target: contract.target || '?', won: won, earned: earned, stages: contract.diff || 1, time: new Date().toLocaleTimeString()});
   updateHUD();
-  showResult(won, contract, earned);
-}
-
-function updateSkills(contract) {
-  G.skills.breach = Math.min(100, G.skills.breach + contract.diff * 2);
-  G.skills.stealth = Math.min(100, G.skills.stealth + (G.inventory.includes('ghost_proxy') ? 3 : 1));
-  G.skills.decrypt = Math.min(100, G.skills.decrypt + (contract.game === 'cipher' ? 3 : 1));
-  G.skills.exploit = Math.min(100, G.skills.exploit + contract.diff);
+  showResult(won, contract, earned, failReason);
 }
 
 function checkLevel() {
-  const lvlThresholds = [0, 200, 500, 1000, 2000, 4000, 8000, 15000];
-  for (let i = lvlThresholds.length - 1; i >= 0; i--) {
-    if (G.xp >= lvlThresholds[i]) { G.lvl = i + 1; break; }
+  var th = [0, 200, 500, 1000, 2000, 4000, 8000, 15000];
+  for (var i = th.length - 1; i >= 0; i--) {
+    if (G.xp >= th[i]) { G.lvl = i + 1; break; }
   }
 }
-
-const RANK_NAMES = ['Novice', 'Lurker', 'Script Kiddie', 'Gray Hat', 'Black Hat', 'Elite', 'Ghost', 'Legend'];
+var RANK_NAMES = ['Novice','Lurker','Script Kiddie','Gray Hat','Black Hat','Elite','Ghost','Legend'];
 function getRank() { return RANK_NAMES[Math.min(G.lvl - 1, RANK_NAMES.length - 1)]; }
 
 // ============================================================
 // MINI-GAMES
 // ============================================================
 function setupCipherGame() {
-  const words = ['ENCRYPT', 'DECRYPT', 'FIREWALL', 'PAYLOAD', 'NETMASK', 'EXPLOIT', 'KERNEL', 'BYPASS'];
-  const word = words[Math.floor(Math.random() * words.length)];
-  const scrambled = word.split('').sort(() => Math.random() - 0.5).join('');
-
-  const area = document.getElementById('minigame-area');
-  area.innerHTML = `
-    <div class="cipher-wrap">
-      <div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">UNSCRAMBLE THE CODE WORD</div>
-      <div class="cipher-prompt" id="cipher-prompt">${scrambled}</div>
-      <input class="cipher-input" id="cipher-input" maxlength="${word.length}" placeholder="TYPE ANSWER..." autocomplete="off" spellcheck="false">
-      <div style="font-size:10px;color:var(--text-dim);margin-top:6px" id="cipher-feedback"></div>
-    </div>
-  `;
-
-  const input = document.getElementById('cipher-input');
-  input.focus();
-  input.addEventListener('input', () => {
-    const val = input.value.toUpperCase();
-    if (val === word) {
-      document.getElementById('cipher-feedback').textContent = '✓ CORRECT — Breach bonus +20%';
-      document.getElementById('cipher-feedback').style.color = 'var(--green)';
-      if (G.currentMission) G.currentMission.gameBonus = 20;
-      input.disabled = true;
+  var words = ['ENCRYPT','DECRYPT','FIREWALL','PAYLOAD','NETMASK','EXPLOIT','KERNEL','BYPASS','ROOTKIT','TROJAN','DAEMON','SUBNET'];
+  var word = words[Math.floor(Math.random() * words.length)];
+  var scrambled = word.split('').sort(function(){return Math.random()-0.5;}).join('');
+  document.getElementById('minigame-area').innerHTML =
+    '<div class="cipher-wrap">'
+    + '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px">UNSCRAMBLE THE CODE WORD</div>'
+    + '<div class="cipher-prompt">' + scrambled + '</div>'
+    + '<input class="cipher-input" id="cipher-input" maxlength="' + word.length + '" placeholder="TYPE ANSWER..." autocomplete="off" spellcheck="false">'
+    + '<div style="font-size:10px;margin-top:6px" id="cipher-fb"></div>'
+    + '</div>';
+  var inp = document.getElementById('cipher-input');
+  inp.focus();
+  inp.addEventListener('input', function() {
+    if (inp.value.toUpperCase() === word) {
+      document.getElementById('cipher-fb').textContent = 'CORRECT';
+      document.getElementById('cipher-fb').style.color = 'var(--green)';
+      inp.disabled = true;
+      solveCurrentStage();
     }
   });
 }
 
 function setupSymbolGame() {
-  const area = document.getElementById('minigame-area');
+  var area = document.getElementById('minigame-area');
   area.innerHTML = '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px">MATCH THE SYMBOL PAIRS</div>';
-
-  const count = 4;
-  const symbols = GLYPHS.slice(0, count);
-  const tiles = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
-
-  const grid = document.createElement('div');
+  var count = 4;
+  var syms = GLYPHS.slice(0, count);
+  var tiles = syms.concat(syms).sort(function(){return Math.random()-0.5;});
+  var grid = document.createElement('div');
   grid.className = 'symbol-grid';
-
-  let selected = [], solved = 0, locked = false;
-
-  tiles.forEach((sym, idx) => {
-    const tile = document.createElement('div');
+  var selected = [], solved = 0, locked = false;
+  tiles.forEach(function(sym) {
+    var tile = document.createElement('div');
     tile.className = 'sym-tile';
     tile.textContent = sym;
     tile.dataset.sym = sym;
-    tile.dataset.idx = idx;
-
-    tile.addEventListener('click', () => {
+    tile.addEventListener('click', function() {
       if (locked || tile.classList.contains('matched') || tile.classList.contains('selected')) return;
       tile.classList.add('selected');
       selected.push(tile);
-
       if (selected.length === 2) {
         locked = true;
-        const [a, b] = selected;
+        var a = selected[0], b = selected[1];
         if (a.dataset.sym === b.dataset.sym) {
           a.classList.remove('selected'); a.classList.add('matched');
           b.classList.remove('selected'); b.classList.add('matched');
-          solved++;
-          selected = []; locked = false;
-          if (solved === count) {
-            area.insertAdjacentHTML('beforeend', '<div style="color:var(--green);font-size:11px;margin-top:8px">✓ ALL PAIRS MATCHED — Breach bonus +25%</div>');
-            if (G.currentMission) G.currentMission.gameBonus = 25;
-          }
+          solved++; selected = []; locked = false;
+          if (solved === count) solveCurrentStage();
         } else {
-          setTimeout(() => {
-            a.classList.remove('selected'); a.classList.add('wrong');
-            b.classList.remove('selected'); b.classList.add('wrong');
-            setTimeout(() => { a.classList.remove('wrong'); b.classList.remove('wrong'); selected = []; locked = false; }, 400);
-          }, 300);
+          setTimeout(function() {
+            a.classList.add('wrong'); b.classList.add('wrong');
+            setTimeout(function() {
+              a.classList.remove('selected','wrong');
+              b.classList.remove('selected','wrong');
+              selected = []; locked = false;
+            }, 400);
+          }, 200);
         }
       }
     });
     grid.appendChild(tile);
   });
-
   area.appendChild(grid);
+}
+
+function setupBinaryGame() {
+  var num = Math.floor(Math.random() * 63) + 1;
+  var binary = num.toString(2);
+  while (binary.length < 8) binary = '0' + binary;
+  document.getElementById('minigame-area').innerHTML =
+    '<div class="binary-wrap">'
+    + '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px">CONVERT BINARY TO DECIMAL</div>'
+    + '<div class="binary-prompt">' + binary + '</div>'
+    + '<input class="binary-input" id="binary-input" type="number" placeholder="ENTER NUMBER..." autocomplete="off">'
+    + '<div style="font-size:10px;margin-top:6px" id="binary-fb"></div>'
+    + '</div>';
+  var inp = document.getElementById('binary-input');
+  inp.focus();
+  inp.addEventListener('input', function() {
+    if (parseInt(inp.value) === num) {
+      document.getElementById('binary-fb').textContent = 'CORRECT';
+      document.getElementById('binary-fb').style.color = 'var(--green)';
+      inp.disabled = true;
+      solveCurrentStage();
+    } else if (inp.value.length >= 3) {
+      document.getElementById('binary-fb').textContent = 'INCORRECT';
+      document.getElementById('binary-fb').style.color = 'var(--red)';
+    }
+  });
+}
+
+function setupTypingGame() {
+  var phrases = [
+    'sudo rm -rf /var/log/trace',
+    'nmap -sV --open 10.0.0.1',
+    'ssh ghost@node7.darknet',
+    'chmod 777 payload.sh',
+    'curl -X POST /api/exfil',
+    'iptables -F && iptables -X',
+    'cat /etc/passwd | grep root',
+    'netstat -an | grep LISTEN'
+  ];
+  var phrase = phrases[Math.floor(Math.random() * phrases.length)];
+  document.getElementById('minigame-area').innerHTML =
+    '<div class="typing-wrap">'
+    + '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px">TYPE THE COMMAND EXACTLY</div>'
+    + '<div class="typing-prompt" id="typing-display"></div>'
+    + '<input class="typing-input" id="typing-input" autocomplete="off" spellcheck="false" placeholder="Start typing...">'
+    + '<div class="typing-bar-outer"><div class="typing-bar-fill" id="typing-prog" style="width:0%"></div></div>'
+    + '</div>';
+  var display = document.getElementById('typing-display');
+  var inp = document.getElementById('typing-input');
+  function render(typed) {
+    var h = '';
+    for (var i = 0; i < phrase.length; i++) {
+      if (i < typed.length) h += '<span class="' + (typed[i] === phrase[i] ? 'done' : 'err') + '">' + phrase[i] + '</span>';
+      else if (i === typed.length) h += '<span class="cur">' + phrase[i] + '</span>';
+      else h += phrase[i];
+    }
+    display.innerHTML = h;
+  }
+  render('');
+  inp.focus();
+  inp.addEventListener('input', function() {
+    render(inp.value);
+    document.getElementById('typing-prog').style.width = Math.min(100, Math.round(inp.value.length / phrase.length * 100)) + '%';
+    if (inp.value === phrase) { inp.disabled = true; solveCurrentStage(); }
+  });
+}
+
+function setupSequenceGame() {
+  var seqSyms = ['+','x','o','*','#','@'];
+  var seqLen = 4;
+  var sequence = [];
+  for (var s = 0; s < seqLen; s++) sequence.push(seqSyms[Math.floor(Math.random() * seqSyms.length)]);
+  document.getElementById('minigame-area').innerHTML =
+    '<div class="seq-wrap">'
+    + '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px" id="seq-status">WATCH THE SEQUENCE</div>'
+    + '<div class="seq-grid" id="seq-grid"></div>'
+    + '</div>';
+  var grid = document.getElementById('seq-grid');
+  var tiles = {};
+  var unique = [];
+  seqSyms.forEach(function(s) { if (unique.indexOf(s) === -1) unique.push(s); });
+  unique.slice(0,6).forEach(function(sym) {
+    var t = document.createElement('div');
+    t.className = 'seq-tile';
+    t.textContent = sym;
+    tiles[sym] = t;
+    grid.appendChild(t);
+  });
+  var playerSeq = [], accepting = false;
+  function flash(sym, cb) {
+    tiles[sym].classList.add('flash');
+    setTimeout(function() { tiles[sym].classList.remove('flash'); setTimeout(cb, 200); }, 500);
+  }
+  function playSeq() {
+    accepting = false; playerSeq = [];
+    document.getElementById('seq-status').textContent = 'WATCH THE SEQUENCE';
+    var i = 0;
+    function next() {
+      if (i >= sequence.length) { accepting = true; document.getElementById('seq-status').textContent = 'NOW REPEAT IT'; return; }
+      flash(sequence[i], function() { i++; next(); });
+    }
+    setTimeout(next, 600);
+  }
+  Object.values(tiles).forEach(function(tile) {
+    tile.addEventListener('click', function() {
+      if (!accepting) return;
+      var sym = tile.textContent;
+      playerSeq.push(sym);
+      var idx = playerSeq.length - 1;
+      if (playerSeq[idx] !== sequence[idx]) {
+        tile.classList.add('wrong');
+        setTimeout(function() { tile.classList.remove('wrong'); }, 400);
+        document.getElementById('seq-status').textContent = 'WRONG -- REPLAYING...';
+        setTimeout(playSeq, 900);
+        return;
+      }
+      tile.classList.add('correct');
+      setTimeout(function() { tile.classList.remove('correct'); }, 300);
+      if (playerSeq.length === sequence.length) {
+        document.getElementById('seq-status').textContent = 'SEQUENCE MATCHED';
+        solveCurrentStage();
+      }
+    });
+  });
+  playSeq();
+}
+
+function setupWireGame() {
+  var SIZE = 5;
+  var r = 0, c = 0;
+  var path = [{r:0,c:0}];
+  while (r < SIZE-1 || c < SIZE-1) {
+    var moves = [];
+    if (r < SIZE-1) moves.push({r:r+1,c:c});
+    if (c < SIZE-1) moves.push({r:r,c:c+1});
+    var mv = moves[Math.floor(Math.random() * moves.length)];
+    r = mv.r; c = mv.c;
+    path.push({r:r,c:c});
+  }
+  var pathSet = {};
+  path.forEach(function(p) { pathSet[p.r+','+p.c] = true; });
+  document.getElementById('minigame-area').innerHTML =
+    '<div class="wire-wrap">'
+    + '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">TRACE THE SIGNAL PATH</div>'
+    + '<div class="wire-grid" id="wire-grid" style="grid-template-columns:repeat(' + SIZE + ',34px)"></div>'
+    + '<div style="font-size:10px;color:var(--text-dim);margin-top:6px" id="wire-status">Click start cell, then trace to end</div>'
+    + '</div>';
+  var wgrid = document.getElementById('wire-grid');
+  var cells = {};
+  var playerPath = [], started = false;
+  for (var row = 0; row < SIZE; row++) {
+    for (var col = 0; col < SIZE; col++) {
+      var cell = document.createElement('div');
+      cell.className = 'wire-cell';
+      var key = row + ',' + col;
+      var isStart = row===0 && col===0;
+      var isEnd = row===SIZE-1 && col===SIZE-1;
+      var isWall = !pathSet[key] && !isStart && !isEnd && Math.random() < 0.3;
+      cell.dataset.r = row; cell.dataset.c = col; cell.dataset.wall = isWall ? '1' : '0';
+      if (isStart) { cell.textContent = 'S'; cell.classList.add('start'); }
+      else if (isEnd) { cell.textContent = 'E'; cell.classList.add('end'); }
+      else if (isWall) { cell.textContent = '#'; cell.classList.add('wall'); }
+      else cell.textContent = '.';
+      cells[key] = cell;
+      wgrid.appendChild(cell);
+    }
+  }
+  function addCell(row, col) {
+    var key = row + ',' + col;
+    var cell = cells[key];
+    if (!cell || cell.dataset.wall === '1') return false;
+    if (playerPath.indexOf(key) !== -1) return false;
+    if (playerPath.length > 0) {
+      var last = playerPath[playerPath.length-1].split(',');
+      var lr = parseInt(last[0]), lc = parseInt(last[1]);
+      if (Math.abs(row-lr) + Math.abs(col-lc) !== 1) return false;
+    }
+    playerPath.push(key);
+    if (!cell.classList.contains('start') && !cell.classList.contains('end')) cell.classList.add('selected');
+    return true;
+  }
+  Object.values(cells).forEach(function(cell) {
+    cell.addEventListener('click', function() {
+      if (cell.dataset.wall === '1') return;
+      var row = parseInt(cell.dataset.r), col = parseInt(cell.dataset.c);
+      if (row===0 && col===0) {
+        playerPath.forEach(function(k) { if (k!=='0,0') cells[k].classList.remove('selected','done'); });
+        playerPath = ['0,0']; started = true;
+        document.getElementById('wire-status').textContent = 'Tracing...';
+        return;
+      }
+      if (!started) return;
+      if (!addCell(row, col)) return;
+      if (row===SIZE-1 && col===SIZE-1) {
+        var valid = playerPath.every(function(k) { return !!pathSet[k]; });
+        if (valid) {
+          playerPath.forEach(function(k) { cells[k].classList.remove('selected'); cells[k].classList.add('done'); });
+          document.getElementById('wire-status').textContent = 'PATH TRACED';
+          solveCurrentStage();
+        } else {
+          document.getElementById('wire-status').textContent = 'WRONG PATH -- click S to retry';
+          playerPath.forEach(function(k) { if(k!=='0,0') cells[k].classList.remove('selected'); });
+          playerPath = []; started = false;
+        }
+      }
+    });
+  });
 }
 
 // ============================================================
 // RESULT
 // ============================================================
-function showResult(won, contract, earned) {
-  const overlay = document.getElementById('result-overlay');
-  overlay.classList.add('show');
-  document.getElementById('result-icon').textContent = won ? '✓' : '✗';
+function showResult(won, contract, earned, failReason) {
+  document.getElementById('result-overlay').classList.add('show');
+  document.getElementById('result-icon').textContent = won ? '\u2713' : '\u2717';
   document.getElementById('result-title').textContent = won ? 'CONTRACT COMPLETE' : 'MISSION FAILED';
   document.getElementById('result-title').className = 'result-title ' + (won ? 'success' : 'fail');
+  var stages = contract.diff || 1;
   document.getElementById('result-detail').textContent = won
-    ? `Target: ${contract.target}\nType: ${contract.type}\nTrace level: ${Math.round(G.history[0]?.won ? 0 : 100)}% (survived)`
-    : `Target: ${contract.target}\nType: ${contract.type}\nCause: ${G.currentMission?.traceVal >= 100 ? 'TRACE OVERLOAD' : 'TIMEOUT'}`;
-  document.getElementById('result-earned').textContent = won ? `⬡ +${earned} CC` : '';
+    ? 'Target: ' + (contract.target||'?') + '\nType: ' + (contract.type||'?') + '\nStages: ' + stages + '/' + stages + ' complete'
+    : 'Target: ' + (contract.target||'?') + '\nType: ' + (contract.type||'?') + '\nCause: ' + (failReason||'FAILED');
+  document.getElementById('result-earned').textContent = won ? '\u29e1 +' + earned + ' CC' : '';
 }
-
 function closeResult() {
   document.getElementById('result-overlay').classList.remove('show');
   navTo('terminal');
   termLog('');
-  termLog(`[MISSION] Contract outcome logged. Balance: ${G.cc} CC`, G.contractsWon === G.contractsRun ? 't-success' : 't-error');
+  termLog('[MISSION] Outcome logged. Balance: ' + G.cc + ' CC', G.contractsWon === G.contractsRun ? 't-success' : 't-error');
 }
 
 // ============================================================
@@ -1892,175 +2152,135 @@ function closeResult() {
 // ============================================================
 function renderMarket() {
   document.getElementById('wallet-cc').textContent = G.cc;
-  const cards = document.getElementById('tool-cards');
+  var cards = document.getElementById('tool-cards');
   cards.innerHTML = '';
-
-  TOOLS.forEach(tool => {
-    const owned = tool.id === 'neural_kit' ? false : G.inventory.includes(tool.id);
-    const card = document.createElement('div');
+  TOOLS.forEach(function(tool) {
+    var isPerm = !tool.consumable;
+    var owned = isPerm && G.inventory.includes(tool.id);
+    var charges = tool.consumable ? getStock(tool.id) : 0;
+    var canAfford = G.cc >= tool.cost;
+    var card = document.createElement('div');
     card.className = 'tool-card' + (owned ? ' owned' : '');
-
-    let costLine, actionLine;
-    if (tool.id === 'neural_kit') {
-      const charges = G.neuralKitCharges;
-      costLine = `<div class="tc-cost">⬡ ${tool.cost} CC &nbsp;<span style="color:var(--amber);font-size:10px">${charges > 0 ? `STOCK: x${charges}` : 'OUT OF STOCK'}</span></div>`;
-      actionLine = `<button class="btn btn-green btn-sm" ${G.cc < tool.cost ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''} onclick="buyTool('${tool.id}')">BUY CHARGE</button>`;
-    } else if (owned) {
-      costLine = `<div class="tc-cost">✓ INSTALLED</div>`;
-      actionLine = `<div class="owned-badge">✓ OWNED</div>`;
+    var badge = tool.consumable
+      ? '<div class="consumable-badge">CONSUMABLE</div>'
+      : '<div class="permanent-badge">PERMANENT</div>';
+    var costLine, actionLine;
+    if (isPerm && owned) {
+      costLine = '<div class="tc-cost" style="color:var(--blue)">INSTALLED</div>';
+      actionLine = '<div class="owned-badge" style="color:var(--blue)">PERMANENT</div>';
+    } else if (tool.consumable) {
+      costLine = '<div class="tc-cost">\u29e1 ' + tool.cost + ' CC <span style="color:var(--amber);font-size:9px">STOCK: ' + (charges>0?'x'+charges:'EMPTY') + '</span></div>';
+      actionLine = '<button class="btn btn-green btn-sm" ' + (canAfford?'':'disabled style="opacity:0.4"') + ' onclick="buyTool(\'' + tool.id + '\')">BUY CHARGE</button>';
     } else {
-      costLine = `<div class="tc-cost">⬡ ${tool.cost} CC</div>`;
-      actionLine = `<button class="btn btn-green btn-sm" ${G.cc < tool.cost ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''} onclick="buyTool('${tool.id}')">BUY</button>`;
+      costLine = '<div class="tc-cost">\u29e1 ' + tool.cost + ' CC</div>';
+      actionLine = '<button class="btn btn-green btn-sm" ' + (canAfford?'':'disabled style="opacity:0.4"') + ' onclick="buyTool(\'' + tool.id + '\')">BUY</button>';
     }
-
-    card.innerHTML = `
-      <div class="tc-icon">${tool.icon}</div>
-      <div class="tc-name">${tool.name}</div>
-      <div class="tc-desc">${tool.desc}</div>
-      ${costLine}
-      ${actionLine}
-    `;
+    card.innerHTML = '<div class="tc-icon">' + tool.icon + '</div>' + badge + '<div class="tc-name">' + tool.name + '</div><div class="tc-desc">' + tool.desc + '</div>' + costLine + actionLine;
     cards.appendChild(card);
   });
-
-  const sumEl = document.getElementById('inv-summary');
-  const summaryLines = G.inventory.filter(id => id !== 'neural_kit').map(id => {
-    const t = TOOLS.find(t => t.id === id);
-    return `${t.icon} ${t.name}`;
-  });
-  if (G.neuralKitCharges > 0) summaryLines.push(`🧠 Neural Kit x${G.neuralKitCharges}`);
-  sumEl.innerHTML = summaryLines.length === 0 ? 'No tools owned.' : summaryLines.join('<br>');
+  var lines = [];
+  G.inventory.forEach(function(id) { var t = TOOLS.find(function(t){return t.id===id;}); lines.push(t.icon + ' ' + t.name); });
+  TOOLS.filter(function(t){return t.consumable&&getStock(t.id)>0;}).forEach(function(t) { lines.push(t.icon + ' ' + t.name + ' x' + getStock(t.id)); });
+  document.getElementById('inv-summary').innerHTML = lines.length ? lines.join('<br>') : 'Nothing owned.';
 }
-
 function buyTool(id) {
-  const tool = TOOLS.find(t => t.id === id);
+  var tool = TOOLS.find(function(t){return t.id===id;});
   if (!tool || G.cc < tool.cost) return;
-  // Neural Kit is consumable — stackable charges, never goes into inventory
-  if (id === 'neural_kit') {
-    G.cc -= tool.cost;
-    G.neuralKitCharges++;
-    updateHUD();
-    renderMarket();
-    notify(`🧠 Neural Kit charge added! Total: x${G.neuralKitCharges}`);
-    termLog(`[MARKET] Neural Kit charge purchased. Stock: x${G.neuralKitCharges}`, 't-info');
-    return;
-  }
-  if (G.inventory.includes(id)) return;
+  if (!tool.consumable && G.inventory.includes(id)) return;
   G.cc -= tool.cost;
-  G.inventory.push(id);
+  if (tool.consumable) {
+    G.stock[id] = (G.stock[id] || 0) + 1;
+    notify(tool.icon + ' ' + tool.name + ' charge added! Stock: x' + G.stock[id]);
+    termLog('[MARKET] ' + tool.name + ' charge purchased. Stock: x' + G.stock[id], 't-info');
+  } else {
+    G.inventory.push(id);
+    notify(tool.icon + ' ' + tool.name + ' installed permanently!');
+    termLog('[MARKET] ' + tool.name + ' installed permanently.', 't-info');
+  }
   updateHUD();
   renderMarket();
-  notify(`${tool.icon} ${tool.name} installed!`);
-  termLog(`[MARKET] Purchased: ${tool.name} for ${tool.cost} CC`, 't-info');
 }
 
 // ============================================================
 // INVENTORY
 // ============================================================
 function renderInventory() {
-  const grid = document.getElementById('inv-grid');
-  const empty = document.getElementById('inv-empty');
-  const detail = document.getElementById('inv-detail');
+  var grid = document.getElementById('inv-grid');
+  var empty = document.getElementById('inv-empty');
+  var detail = document.getElementById('inv-detail');
   grid.innerHTML = '';
-
-  const hasItems = G.inventory.length > 0 || G.neuralKitCharges > 0;
+  var permTools = G.inventory.map(function(id){return TOOLS.find(function(t){return t.id===id;});});
+  var consumables = TOOLS.filter(function(t){return t.consumable&&getStock(t.id)>0;});
+  var hasItems = permTools.length > 0 || consumables.length > 0;
   if (!hasItems) {
     empty.style.display = 'block';
-    detail.innerHTML = '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px">NO TOOLS INSTALLED</div><div style="font-size:10px;color:var(--text-dim);margin-top:8px">Visit the Black Market to purchase tools.</div>';
+    detail.innerHTML = '<div style="font-size:10px;color:var(--text-dim)">NO TOOLS</div><div style="font-size:10px;color:var(--text-dim);margin-top:8px">Visit the Black Market.</div>';
     return;
   }
   empty.style.display = 'none';
-
-  // Show neural kit charges as a special consumable item
-  if (G.neuralKitCharges > 0) {
-    const item = document.createElement('div');
+  function addCard(icon, name, tagText, tagColor, detailHTML) {
+    var item = document.createElement('div');
     item.className = 'inv-item';
-    item.innerHTML = `<div class="inv-icon">🧠</div><div class="inv-name">Neural Scripting Kit</div><div class="inv-effect" style="color:var(--amber)">CHARGES: x${G.neuralKitCharges}</div>`;
-    item.addEventListener('click', () => {
-      document.querySelectorAll('.inv-item').forEach(i => i.classList.remove('selected'));
+    item.innerHTML = '<div class="inv-icon">' + icon + '</div><div class="inv-name">' + name + '</div><div class="inv-effect" style="color:' + tagColor + '">' + tagText + '</div>';
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.inv-item').forEach(function(i){i.classList.remove('selected');});
       item.classList.add('selected');
-      detail.innerHTML = `
-        <div class="inv-d-icon">🧠</div>
-        <div class="inv-d-name">Neural Scripting Kit</div>
-        <div class="inv-d-desc">AI-assisted payload automation. Deploy during a mission to instantly solve the mini-game puzzle. Each use consumes one charge. Stackable — buy more from the Black Market.</div>
-        <div class="inv-d-stat">CHARGES REMAINING: <span style="color:var(--amber)">x${G.neuralKitCharges}</span></div>
-        <div class="inv-d-stat" style="color:var(--text-dim);font-size:10px;margin-top:8px">COST PER CHARGE: 150 CC</div>
-        <div class="inv-d-stat" style="color:var(--blue-dim);font-size:10px;margin-top:4px">TYPE: CONSUMABLE</div>
-      `;
+      detail.innerHTML = detailHTML;
     });
     grid.appendChild(item);
   }
-
-  G.inventory.forEach(id => {
-    const tool = TOOLS.find(t => t.id === id);
-    const item = document.createElement('div');
-    item.className = 'inv-item';
-    item.innerHTML = `<div class="inv-icon">${tool.icon}</div><div class="inv-name">${tool.name}</div><div class="inv-effect">${tool.effect}</div>`;
-    item.addEventListener('click', () => {
-      document.querySelectorAll('.inv-item').forEach(i => i.classList.remove('selected'));
-      item.classList.add('selected');
-      detail.innerHTML = `
-        <div class="inv-d-icon">${tool.icon}</div>
-        <div class="inv-d-name">${tool.name}</div>
-        <div class="inv-d-desc">${tool.desc}</div>
-        <div class="inv-d-stat">EFFECT: ${tool.effect}</div>
-        <div class="inv-d-stat" style="color:var(--text-dim);font-size:10px;margin-top:8px">COST: ${tool.cost} CC</div>
-      `;
-    });
-    grid.appendChild(item);
+  permTools.forEach(function(t) {
+    addCard(t.icon, t.name, 'PERMANENT', 'var(--blue)',
+      '<div class="inv-d-icon">' + t.icon + '</div><div class="inv-d-name">' + t.name + '</div><div class="inv-d-desc">' + t.desc + '</div><div class="inv-d-stat">' + t.effect + '</div><div style="font-size:9px;color:var(--blue);margin-top:6px">TYPE: PERMANENT</div>');
+  });
+  consumables.forEach(function(t) {
+    addCard(t.icon, t.name, 'CHARGES: x' + getStock(t.id), 'var(--amber)',
+      '<div class="inv-d-icon">' + t.icon + '</div><div class="inv-d-name">' + t.name + '</div><div class="inv-d-desc">' + t.desc + '</div><div class="inv-d-stat">' + t.effect + '</div><div class="inv-d-stat" style="color:var(--amber)">CHARGES: x' + getStock(t.id) + '</div><div style="font-size:9px;color:var(--amber);margin-top:6px">TYPE: CONSUMABLE</div>');
   });
 }
 
 // ============================================================
 // SYSTEM
 // ============================================================
-const ACHIEVEMENTS_DEF = [
-  { id: 'first_blood', name: 'First Blood', desc: 'Complete your first contract', icon: '🩸', check: () => G.contractsWon >= 1 },
-  { id: 'shopper', name: 'Black Market Regular', desc: 'Purchase any tool', icon: '🛒', check: () => G.inventory.length >= 1 },
-  { id: 'arsenal', name: 'Fully Armed', desc: 'Own 5 tools', icon: '⚙', check: () => G.inventory.length >= 5 },
-  { id: 'crypto_rich', name: 'Crypto Rich', desc: 'Accumulate 1000 CC', icon: '💰', check: () => G.totalEarned >= 1000 },
-  { id: 'ghost', name: 'Ghost Protocol', desc: 'Install the Ghost Proxy Mesh', icon: '👻', check: () => G.inventory.includes('ghost_proxy') },
-  { id: 'hard_target', name: 'Hard Target', desc: 'Complete 5 contracts', icon: '🎯', check: () => G.contractsWon >= 5 },
+var ACHIEVEMENTS_DEF = [
+  {id:'first_blood', name:'First Blood',          desc:'Complete your first contract',    icon:'🩸', check:function(){return G.contractsWon>=1;}},
+  {id:'shopper',     name:'Black Market Regular', desc:'Purchase any tool',               icon:'🛒', check:function(){return totalItems()>=1;}},
+  {id:'arsenal',     name:'Fully Armed',           desc:'Own 5+ tools or charges total',  icon:'⚙',  check:function(){return totalItems()>=5;}},
+  {id:'crypto_rich', name:'Crypto Rich',           desc:'Accumulate 1000 CC earned',      icon:'💰', check:function(){return G.totalEarned>=1000;}},
+  {id:'ghost_prot',  name:'Ghost Protocol',        desc:'Buy a Ghost Proxy charge',       icon:'👻', check:function(){return getStock('ghost_proxy')>0||G.contractsWon>0;}},
+  {id:'hard_target', name:'Hard Target',           desc:'Complete 5 contracts',           icon:'🎯', check:function(){return G.contractsWon>=5;}},
 ];
-
 function checkAchievements() {
-  ACHIEVEMENTS_DEF.forEach(a => {
+  ACHIEVEMENTS_DEF.forEach(function(a) {
     if (!G.achievements[a.id] && a.check()) {
       G.achievements[a.id] = true;
-      notify(`🏆 Achievement unlocked: ${a.name}`);
-      termLog(`[ACH] Achievement unlocked: ${a.name}`, 't-success');
+      notify('Achievement unlocked: ' + a.name);
+      termLog('[ACH] Achievement unlocked: ' + a.name, 't-success');
     }
   });
 }
-
 function renderSystem() {
-  // Skills
-  ['breach','stealth','decrypt','exploit'].forEach(s => {
-    document.getElementById(`skill-${s}`).textContent = G.skills[s];
-    document.getElementById(`pb-${s}`).style.width = G.skills[s] + '%';
+  ['breach','stealth','decrypt','exploit'].forEach(function(s) {
+    document.getElementById('skill-'+s).textContent = G.skills[s];
+    document.getElementById('pb-'+s).style.width = G.skills[s] + '%';
   });
-
-  // Achievements
-  const alist = document.getElementById('achievements-list');
+  var alist = document.getElementById('achievements-list');
   alist.innerHTML = '';
-  ACHIEVEMENTS_DEF.forEach(a => {
-    const el = document.createElement('div');
+  ACHIEVEMENTS_DEF.forEach(function(a) {
+    var el = document.createElement('div');
     el.className = 'achievement' + (G.achievements[a.id] ? '' : ' ach-locked');
-    el.innerHTML = `<div class="ach-icon">${a.icon}</div><div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>`;
+    el.innerHTML = '<div class="ach-icon">' + a.icon + '</div><div><div class="ach-name">' + a.name + '</div><div class="ach-desc">' + a.desc + '</div></div>';
     alist.appendChild(el);
   });
-
-  // History
-  const hist = document.getElementById('mission-history');
-  if (G.history.length === 0) {
-    hist.textContent = 'No missions completed yet.';
-  } else {
-    hist.innerHTML = G.history.slice(0, 10).map(h =>
-      `<div style="color:${h.won ? 'var(--green)' : 'var(--red)'}">
-        ${h.won ? '✓' : '✗'} ${h.name}: ${h.target} — ${h.won ? '+'+h.earned+' CC' : 'FAILED'} <span style="color:var(--text-dim);font-size:10px">${h.time}</span>
-      </div>`
-    ).join('');
-  }
+  var hist = document.getElementById('mission-history');
+  if (G.history.length === 0) { hist.textContent = 'No missions completed yet.'; return; }
+  hist.innerHTML = G.history.slice(0,10).map(function(h) {
+    return '<div style="color:' + (h.won?'var(--green)':'var(--red)') + '">'
+      + (h.won?'\u2713':'\u2717') + ' ' + h.name + ': ' + h.target
+      + ' -- ' + (h.won?'+'+h.earned+' CC':'FAILED')
+      + ' (' + h.stages + ' stage' + (h.stages>1?'s':'') + ')'
+      + ' <span style="color:var(--text-dim);font-size:10px">' + h.time + '</span></div>';
+  }).join('');
 }
 
 // ============================================================
@@ -2074,73 +2294,63 @@ function updateHUD() {
   document.getElementById('rep-pct').textContent = G.rep;
   document.getElementById('rep-fill').style.width = G.rep + '%';
   document.getElementById('stat-contracts').textContent = G.contractsRun;
-  document.getElementById('stat-tools').textContent = G.inventory.length;
+  document.getElementById('stat-tools').textContent = totalItems();
   document.getElementById('stat-earned').textContent = G.totalEarned;
-  document.getElementById('stat-rate').textContent = G.contractsRun > 0 ? Math.round((G.contractsWon / G.contractsRun) * 100) + '%' : '—';
+  document.getElementById('stat-rate').textContent = G.contractsRun > 0 ? Math.round((G.contractsWon/G.contractsRun)*100)+'%' : '--';
 }
-
 function setStatus(s) { document.getElementById('status-text').textContent = s; }
-
-// ============================================================
-// NOTIFICATIONS
-// ============================================================
 function notify(msg) {
-  const el = document.getElementById('notification');
+  var el = document.getElementById('notification');
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+  setTimeout(function() { el.classList.remove('show'); }, 3000);
 }
 
 // ============================================================
 // PARTICLES
 // ============================================================
 function spawnParticles() {
-  const container = document.getElementById('particles');
-  for (let i = 0; i < 25; i++) {
-    const p = document.createElement('div');
+  var c = document.getElementById('particles');
+  for (var i = 0; i < 25; i++) {
+    var p = document.createElement('div');
     p.className = 'particle';
     p.style.left = Math.random() * 100 + 'vw';
     p.style.animationDuration = (8 + Math.random() * 12) + 's';
     p.style.animationDelay = (-Math.random() * 20) + 's';
     p.style.width = Math.random() > 0.8 ? '2px' : '1px';
     p.style.height = (10 + Math.random() * 30) + 'px';
-    container.appendChild(p);
+    c.appendChild(p);
   }
 }
 
 // ============================================================
 // PASSIVE INCOME
 // ============================================================
-setInterval(() => {
-  if (G.inventory.includes('darkwire')) {
-    G.cc += 5;
-    updateHUD();
-  }
+setInterval(function() {
+  if (G.inventory.includes('darkwire')) { G.cc += 5; updateHUD(); }
 }, 60000);
 
 // ============================================================
 // UTILS
 // ============================================================
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-function fmtTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+function delay(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+function fmtTime(s) { s = Math.max(0,s); return (Math.floor(s/60)<10?'0':'')+Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60); }
 
 // ============================================================
 // COMMIT HASH
 // ============================================================
 async function updateCommitHash() {
   try {
-    const res = await fetch('https://api.github.com/repos/jellybean1979/ghostnode/commits?per_page=1');
+    var res = await fetch('https://api.github.com/repos/jellybean1979/ghostnode/commits?per_page=1');
     if (!res.ok) return;
-    const data = await res.json();
-    const sha = data[0]?.sha?.substring(0, 7);
+    var data = await res.json();
+    var sha = data[0] && data[0].sha ? data[0].sha.substring(0,7) : null;
     if (sha) {
-      const el = document.getElementById('commit-hash');
+      var el = document.getElementById('commit-hash');
       el.textContent = sha;
-      el.href = `https://github.com/jellybean1979/ghostnode/commit/${data[0].sha}`;
+      el.href = 'https://github.com/jellybean1979/ghostnode/commit/' + data[0].sha;
     }
-  } catch (e) {
-    // silently fail — hash stays as '......'
-  }
+  } catch(e) {}
 }
 
 // ============================================================
