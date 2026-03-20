@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GHOSTNODE v1.3</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #00ff41;
+  --green-dim: #00aa2b;
+  --green-dark: #003310;
+  --green-glow: rgba(0,255,65,0.15);
+  --blue: #00d4ff;
+  --blue-dim: #0088aa;
+  --purple: #b400ff;
+  --purple-dim: #5a007a;
+  --amber: #ffaa00;
+  --red: #ff3333;
+  --bg: #050a05;
+  --bg2: #070f07;
+  --panel: #060d06;
+  --panel2: #0a150a;
+  --border: #1a3d1a;
+  --text: #ccffcc;
+  --text-dim: #669966;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-display: 'Orbitron', monospace;
+  --font-crt: 'VT323', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--green);
+  font-family: var(--font-mono);
+  height: 100%;
+  overflow: hidden;
+  cursor: default;
+}
+
+/* CRT scanlines overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Screen flicker */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0,255,65,0.01);
+  pointer-events: none;
+  z-index: 9998;
+  animation: screenFlicker 8s infinite;
+}
+
+@keyframes screenFlicker {
+  0%,100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.85; }
+  94% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
+}
+
+/* === LAYOUT === */
+#app {
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  grid-template-columns: 180px 1fr;
+  height: 100vh;
+  gap: 0;
+}
+
+/* TOP BAR */
+#topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+#topbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  animation: scanH 4s linear infinite;
+}
+@keyframes scanH {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+#logo {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 3px;
+  color: var(--green);
+  text-shadow: 0 0 10px var(--green), 0 0 30px rgba(0,255,65,0.3);
+  white-space: nowrap;
+}
+#logo span { color: var(--blue); }
+
+#version-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  border-left: 1px solid var(--border);
+  padding-left: 12px;
+  line-height: 1.5;
+}
+#version-tag a {
+  color: var(--green-dim);
+  text-decoration: none;
+}
+#version-tag a:hover { color: var(--green); }
+
+#status-bar {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+#status-text {
+  color: var(--amber);
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+#currency-display {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--blue);
+  text-shadow: 0 0 8px var(--blue);
+  white-space: nowrap;
+}
+#cc-amount { color: var(--green); font-weight: 700; }
+
+#xp-display {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* SIDEBAR */
+#sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  position: relative;
+}
+.nav-item:hover { color: var(--green); background: var(--green-glow); }
+.nav-item.active {
+  color: var(--green);
+  border-left-color: var(--green);
+  background: var(--green-glow);
+  text-shadow: 0 0 6px var(--green);
+}
+.nav-item.active::before {
+  content: '>';
+  position: absolute;
+  left: 6px;
+  color: var(--green);
+}
+.nav-icon { font-size: 14px; width: 16px; text-align: center; }
+
+.sidebar-spacer { flex: 1; }
+
+#player-info {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+.rep-bar-wrap { margin-top: 4px; }
+.rep-bar {
+  height: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  margin-top: 2px;
+  position: relative;
+  overflow: hidden;
+}
+.rep-fill {
+  height: 100%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  transition: width 0.5s;
+}
+
+/* MAIN CONTENT */
+#main {
+  grid-column: 2;
+  grid-row: 2;
+  overflow: hidden;
+  position: relative;
+}
+
+.screen { display: none; height: 100%; overflow-y: auto; padding: 20px; }
+.screen.active { display: block; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+/* === TERMINAL SCREEN === */
+#terminal-output {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  height: calc(100% - 110px);
+  overflow-y: auto;
+  padding: 16px;
+  font-family: var(--font-crt);
+  font-size: 18px;
+  line-height: 1.5;
+  position: relative;
+}
+#terminal-output::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none;
+}
+
+.t-line { margin-bottom: 1px; }
+.t-system { color: var(--text-dim); }
+.t-breach { color: var(--green); text-shadow: 0 0 4px var(--green); }
+.t-warn { color: var(--amber); }
+.t-error { color: var(--red); }
+.t-info { color: var(--blue); }
+.t-success { color: #00ff88; text-shadow: 0 0 6px #00ff88; }
+
+.cursor-blink::after {
+  content: '█';
+  animation: blink 0.8s infinite;
+  color: var(--green);
+}
+
+#terminal-input-bar {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+}
+#terminal-input-bar span { color: var(--green-dim); }
+#fake-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--green);
+  font-family: var(--font-crt);
+  font-size: 18px;
+  caret-color: var(--green);
+}
+
+.terminal-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.stat-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: center;
+}
+.stat-label { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; display: block; }
+.stat-value { font-family: var(--font-display); font-size: 14px; color: var(--green); }
+
+/* === CONTRACTS SCREEN === */
+#contracts-screen { padding: 20px; }
+
+.screen-header {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 4px;
+  color: var(--blue);
+  margin-bottom: 6px;
+  text-shadow: 0 0 10px var(--blue);
+  position: relative;
+  display: inline-block;
+}
+.screen-header::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--blue), transparent);
+}
+.screen-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; margin-bottom: 20px; margin-top: 8px; }
+
+.contracts-grid {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 16px;
+}
+
+.contract-list { display: flex; flex-direction: column; gap: 10px; }
+
+.contract-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.contract-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue-dim), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.4s;
+}
+.contract-card:hover::before { transform: translateX(0); }
+.contract-card:hover {
+  border-color: var(--blue-dim);
+  background: rgba(0,100,150,0.1);
+  box-shadow: 0 0 15px rgba(0,100,200,0.15);
+}
+.contract-card.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.contract-card.locked:hover { border-color: var(--border); background: var(--panel); box-shadow: none; }
+
+.cc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.cc-title { font-size: 13px; color: var(--text); font-weight: 600; }
+.cc-diff { display: flex; gap: 3px; }
+.star { font-size: 11px; }
+.star.filled { color: var(--amber); text-shadow: 0 0 4px var(--amber); }
+.star.empty { color: var(--border); }
+
+.cc-meta { display: flex; gap: 16px; font-size: 10px; color: var(--text-dim); margin-bottom: 8px; }
+.cc-reward { color: var(--green); }
+.cc-type { color: var(--blue-dim); }
+.cc-risk { color: var(--amber); }
+
+.cc-desc { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; line-height: 1.5; }
+
+.cc-req { font-size: 10px; color: var(--purple); margin-bottom: 8px; }
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  padding: 7px 16px;
+  border: 1px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.btn-green {
+  color: var(--green);
+  border-color: var(--green);
+}
+.btn-green:hover {
+  background: var(--green);
+  color: var(--bg);
+  box-shadow: 0 0 12px var(--green);
+}
+.btn-blue {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+.btn-blue:hover {
+  background: var(--blue);
+  color: var(--bg);
+  box-shadow: 0 0 12px var(--blue);
+}
+.btn-locked {
+  color: var(--text-dim);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+
+/* Contract sidebar */
+.contract-sidebar { display: flex; flex-direction: column; gap: 10px; }
+.sidebar-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px;
+}
+.sp-title { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase; }
+.stat-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
+.stat-row-label { color: var(--text-dim); }
+.stat-row-val { color: var(--green); }
+
+/* Particles */
+#particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.particle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  background: var(--green);
+  opacity: 0.3;
+  animation: drift linear infinite;
+}
+@keyframes drift {
+  0% { transform: translateY(100vh); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-20px); opacity: 0; }
+}
+
+/* === MISSION SCREEN === */
+#mission-screen {
+  display: none;
+  height: 100%;
+  padding: 20px;
+  flex-direction: column;
+  gap: 12px;
+}
+#mission-screen.active { display: flex; }
+
+.mission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mission-title { font-family: var(--font-display); font-size: 14px; letter-spacing: 3px; color: var(--amber); }
+.mission-timer {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--red);
+  text-shadow: 0 0 10px var(--red);
+}
+
+.mission-panels {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Trace meter */
+.trace-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  gap: 8px;
+}
+.trace-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); }
+.trace-bar-wrap {
+  flex: 1;
+  width: 32px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.trace-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(0deg, var(--red), var(--amber));
+  box-shadow: 0 0 10px var(--red);
+  transition: height 0.5s;
+}
+.trace-pct { font-family: var(--font-display); font-size: 12px; color: var(--red); }
+
+/* Mission log */
+.mission-log-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.panel-title {
+  padding: 8px 12px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+
+.breach-progress-wrap { padding: 12px; }
+.breach-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+.progress-bar-outer {
+  height: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green-dark), var(--green));
+  box-shadow: 0 0 8px var(--green);
+  transition: width 0.3s;
+  position: relative;
+}
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: 4px;
+  background: white;
+  opacity: 0.6;
+  animation: pulse 0.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.6}50%{opacity:0.2} }
+.progress-pct {
+  position: absolute;
+  right: 6px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--text);
+  z-index: 1;
+}
+
+#mission-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  font-family: var(--font-crt);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Mini-game panel */
+.minigame-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+#minigame-area { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+/* Symbol match game */
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.sym-tile {
+  aspect-ratio: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-crt);
+}
+.sym-tile:hover { border-color: var(--blue); background: rgba(0,100,200,0.1); }
+.sym-tile.selected { border-color: var(--amber); background: rgba(255,150,0,0.15); }
+.sym-tile.matched { border-color: var(--green); background: rgba(0,255,65,0.1); color: var(--green); }
+.sym-tile.wrong { border-color: var(--red); background: rgba(255,50,50,0.1); animation: shake 0.3s; }
+@keyframes shake { 0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)} }
+
+/* Cipher game */
+.cipher-wrap { text-align: center; }
+.cipher-prompt { font-family: var(--font-crt); font-size: 28px; color: var(--amber); letter-spacing: 6px; margin: 10px 0; text-shadow: 0 0 8px var(--amber); }
+.cipher-input {
+  font-family: var(--font-crt);
+  font-size: 22px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--green);
+  text-align: center;
+  padding: 6px;
+  width: 100%;
+  letter-spacing: 4px;
+  outline: none;
+}
+.cipher-input:focus { border-color: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+
+/* Tool deploy buttons */
+.tool-deploy-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.deploy-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 6px 10px;
+  background: var(--panel2);
+  border: 1px solid var(--purple-dim);
+  color: var(--purple);
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+}
+.deploy-btn:hover {
+  background: rgba(180,0,255,0.15);
+  border-color: var(--purple);
+  box-shadow: 0 0 8px rgba(180,0,255,0.3);
+}
+.deploy-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* === BLACK MARKET === */
+#market-screen {}
+.market-grid {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 16px;
+  margin-top: 16px;
+}
+.tool-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; align-content: start; }
+
+.tool-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.tool-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(180,0,255,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.tool-card:hover {
+  border-color: var(--purple-dim);
+  box-shadow: 0 0 16px rgba(180,0,255,0.15);
+}
+.tool-card.owned { border-color: var(--green-dim); }
+.tool-card.owned::after { background: linear-gradient(135deg, rgba(0,255,65,0.05) 0%, transparent 60%); }
+
+.tc-icon { font-size: 28px; margin-bottom: 8px; }
+.tc-name { font-size: 12px; color: var(--text); font-weight: 600; margin-bottom: 4px; }
+.tc-desc { font-size: 10px; color: var(--text-dim); line-height: 1.5; margin-bottom: 10px; }
+.tc-cost { font-family: var(--font-display); font-size: 13px; color: var(--green); margin-bottom: 10px; }
+.owned-badge {
+  font-size: 9px;
+  color: var(--green);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* === INVENTORY === */
+.inventory-layout {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 16px;
+  margin-top: 16px;
+}
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+.inv-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.inv-item:hover { border-color: var(--green-dim); }
+.inv-item.selected { border-color: var(--green); background: var(--green-glow); }
+.inv-icon { font-size: 24px; margin-bottom: 6px; }
+.inv-name { font-size: 11px; color: var(--text); }
+.inv-effect { font-size: 10px; color: var(--green-dim); margin-top: 4px; }
+
+.inv-detail {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 16px;
+}
+.inv-d-icon { font-size: 40px; margin-bottom: 10px; }
+.inv-d-name { font-size: 13px; color: var(--text); margin-bottom: 6px; }
+.inv-d-desc { font-size: 11px; color: var(--text-dim); line-height: 1.6; margin-bottom: 12px; }
+.inv-d-stat { font-size: 11px; color: var(--green); margin-bottom: 4px; }
+
+/* === SYSTEM === */
+.system-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.sys-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 16px;
+}
+.sys-title { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 12px; }
+.prog-item { margin-bottom: 10px; }
+.prog-label { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between; }
+.prog-bar {
+  height: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.prog-fill { height: 100%; transition: width 0.8s; }
+.prog-fill.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.prog-fill.blue { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+.prog-fill.purple { background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+
+.achievement { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.ach-icon { font-size: 20px; }
+.ach-name { font-size: 11px; color: var(--text); }
+.ach-desc { font-size: 10px; color: var(--text-dim); }
+.ach-locked { opacity: 0.4; }
+
+/* NOTIFICATION */
+#notification {
+  position: fixed;
+  top: 60px; right: 16px;
+  background: var(--panel2);
+  border: 1px solid var(--green);
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--green);
+  z-index: 9997;
+  transform: translateX(200%);
+  transition: transform 0.3s;
+  max-width: 280px;
+  box-shadow: 0 0 20px var(--green-glow);
+}
+#notification.show { transform: translateX(0); }
+
+/* GLITCH effect */
+.glitch {
+  animation: glitch 0.3s steps(1) forwards;
+}
+@keyframes glitch {
+  0% { clip-path: inset(0 0 95% 0); transform: translateX(-2px); }
+  20% { clip-path: inset(30% 0 50% 0); transform: translateX(2px); }
+  40% { clip-path: inset(60% 0 20% 0); transform: translateX(-1px); }
+  60% { clip-path: inset(80% 0 5% 0); transform: translateX(1px); }
+  80% { clip-path: inset(10% 0 80% 0); transform: translateX(0); }
+  100% { clip-path: none; transform: none; }
+}
+
+/* RESULT SCREEN */
+#result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+#result-overlay.show { display: flex; }
+#result-box {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  padding: 40px;
+  text-align: center;
+  max-width: 360px;
+  width: 90%;
+  position: relative;
+}
+.result-icon { font-size: 48px; margin-bottom: 16px; }
+.result-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 3px; margin-bottom: 8px; }
+.result-title.success { color: var(--green); text-shadow: 0 0 15px var(--green); }
+.result-title.fail { color: var(--red); text-shadow: 0 0 15px var(--red); }
+.result-detail { font-size: 12px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.7; }
+.result-earned { font-family: var(--font-display); font-size: 22px; color: var(--green); margin-bottom: 20px; }
+
+/* Compact buttons */
+.btn-sm { padding: 5px 12px; font-size: 10px; }
+
+/* Responsive tweak for smaller screens */
+@media (max-width: 800px) {
+  #app { grid-template-columns: 140px 1fr; }
+  .mission-panels { grid-template-columns: 80px 1fr; }
+  .minigame-panel { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<div id="notification" id="notification"></div>
+
+<div id="app">
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div id="logo">GHOST<span>NODE</span> <span style="color:var(--text-dim);font-size:10px">v1.3</span></div>
+    <div id="version-tag">By Gary Langley &nbsp;|&nbsp; build <a id="commit-hash" href="https://github.com/jellybean1979/ghostnode" target="_blank">......</a></div>
+    <div id="status-bar">SYSTEM STATUS: <span id="status-text">IDLE</span></div>
+    <div id="xp-display">XP: <span id="xp-val">0</span> &nbsp;|&nbsp; LVL: <span id="lvl-val">1</span></div>
+    <div id="currency-display">⬡ <span id="cc-amount">250</span> CC</div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="nav-item active" data-screen="terminal"><span class="nav-icon">▶</span>TERMINAL</div>
+    <div class="nav-item" data-screen="contracts"><span class="nav-icon">◈</span>CONTRACTS</div>
+    <div class="nav-item" data-screen="market"><span class="nav-icon">◆</span>BLACK MARKET</div>
+    <div class="nav-item" data-screen="inventory"><span class="nav-icon">▣</span>INVENTORY</div>
+    <div class="nav-item" data-screen="system"><span class="nav-icon">◉</span>SYSTEM</div>
+    <div class="sidebar-spacer"></div>
+    <div id="player-info">
+      <div>ALIAS: <span style="color:var(--green)">ghost_0x</span></div>
+      <div>RANK: <span id="rank-text">Novice</span></div>
+      <div class="rep-bar-wrap">
+        REP <span id="rep-pct">0</span>%
+        <div class="rep-bar"><div class="rep-fill" id="rep-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="main">
+
+    <!-- TERMINAL -->
+    <div id="terminal-screen" class="screen active">
+      <div class="terminal-stats">
+        <div class="stat-box">
+          <span class="stat-label">CONTRACTS RUN</span>
+          <span class="stat-value" id="stat-contracts">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">SUCCESS RATE</span>
+          <span class="stat-value" id="stat-rate">—</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">TOOLS OWNED</span>
+          <span class="stat-value" id="stat-tools">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">TOTAL EARNED</span>
+          <span class="stat-value" id="stat-earned">0</span>
+        </div>
+      </div>
+      <div id="terminal-output"></div>
+      <div id="terminal-input-bar">
+        <span>ghost_0x@node:~$</span>
+        <input type="text" id="fake-input" placeholder="type help for commands..." autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <!-- CONTRACTS -->
+    <div id="contracts-screen" class="screen">
+      <div class="screen-header">AVAILABLE CONTRACTS</div>
+      <div class="screen-sub">SELECT A TARGET // CURRENT CLEARANCE: <span id="clearance-text">LEVEL 1</span></div>
+      <div class="contracts-grid">
+        <div class="contract-list" id="contract-list"></div>
+        <div class="contract-sidebar">
+          <div class="sidebar-panel">
+            <div class="sp-title">OPERATOR STATS</div>
+            <div class="stat-row"><span class="stat-row-label">BREACH SPEED</span><span class="stat-row-val" id="cs-speed">1.0x</span></div>
+            <div class="stat-row"><span class="stat-row-label">TRACE SHIELD</span><span class="stat-row-val" id="cs-shield">0%</span></div>
+            <div class="stat-row"><span class="stat-row-label">AUTO-SOLVE</span><span class="stat-row-val" id="cs-auto">NO</span></div>
+            <div class="stat-row"><span class="stat-row-label">BONUS REVEAL</span><span class="stat-row-val" id="cs-bonus">NO</span></div>
+          </div>
+          <div class="sidebar-panel">
+            <div class="sp-title">ACTIVE TOOLS</div>
+            <div id="active-tools-list" style="font-size:10px;color:var(--text-dim);line-height:2">No tools equipped.</div>
+          </div>
+          <div class="sidebar-panel">
+            <div class="sp-title">TRACE MODIFIER</div>
+            <div style="font-size:22px;font-family:var(--font-display);color:var(--amber)" id="trace-mod">1.0x</div>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Ghost Proxy reduces this</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MISSION (dynamic show/hide via JS) -->
+    <div id="mission-screen" class="screen">
+      <div class="mission-header">
+        <div class="mission-title" id="m-title">MISSION RUNNING</div>
+        <div class="mission-timer" id="m-timer">00:00</div>
+      </div>
+      <div class="mission-panels">
+        <div class="trace-panel">
+          <div class="trace-label">TRACE</div>
+          <div class="trace-bar-wrap"><div class="trace-fill" id="trace-fill" style="height:0%"></div></div>
+          <div class="trace-pct"><span id="trace-pct-val">0</span>%</div>
+        </div>
+        <div class="mission-log-panel">
+          <div class="panel-title">BREACH PROGRESS</div>
+          <div class="breach-progress-wrap">
+            <div class="breach-label" id="breach-label">INITIALIZING...</div>
+            <div class="progress-bar-outer">
+              <div class="progress-bar-fill" id="breach-bar" style="width:0%"></div>
+              <span class="progress-pct" id="breach-pct">0%</span>
+            </div>
+          </div>
+          <div id="mission-log"></div>
+        </div>
+        <div class="minigame-panel">
+          <div class="panel-title" id="minigame-title">SUBSYSTEM</div>
+          <div id="minigame-area"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <div style="font-size:10px;color:var(--text-dim);margin-right:4px">DEPLOY:</div>
+        <div class="tool-deploy-bar" id="tool-deploy-bar"></div>
+      </div>
+    </div>
+
+    <!-- BLACK MARKET -->
+    <div id="market-screen" class="screen">
+      <div class="screen-header">BLACK MARKET</div>
+      <div class="screen-sub">UNDERGROUND TECH EXCHANGE // ACCESS LEVEL: <span id="access-level">2</span></div>
+      <div class="market-grid">
+        <div class="tool-cards" id="tool-cards"></div>
+        <div>
+          <div class="sidebar-panel" style="margin-bottom:10px">
+            <div class="sp-title">WALLET</div>
+            <div style="font-family:var(--font-display);font-size:20px;color:var(--green)">⬡ <span id="wallet-cc">0</span> CC</div>
+          </div>
+          <div class="sidebar-panel">
+            <div class="sp-title">INVENTORY SUMMARY</div>
+            <div id="inv-summary" style="font-size:10px;color:var(--text-dim);line-height:2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div id="inventory-screen" class="screen">
+      <div class="screen-header">INVENTORY / LOADOUT</div>
+      <div class="screen-sub">INSTALLED TOOLS AND MODULES</div>
+      <div class="inventory-layout">
+        <div>
+          <div style="font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:8px">INSTALLED MODULES</div>
+          <div class="inv-grid" id="inv-grid"></div>
+          <div id="inv-empty" style="color:var(--text-dim);font-size:11px;margin-top:16px">No tools in inventory. Visit the Black Market.</div>
+        </div>
+        <div class="inv-detail" id="inv-detail">
+          <div style="font-size:10px;color:var(--text-dim);letter-spacing:2px">SELECT A TOOL</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:8px;line-height:1.7">Click any installed tool to view its stats and effects.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSTEM -->
+    <div id="system-screen" class="screen">
+      <div class="screen-header">SYSTEM PROFILE</div>
+      <div class="screen-sub">OPERATOR DATA // GHOSTNODE NETWORK</div>
+      <div class="system-grid">
+        <div class="sys-panel">
+          <div class="sys-title">SKILL MATRIX</div>
+          <div class="prog-item">
+            <div class="prog-label"><span>BREACH</span><span id="skill-breach">10</span></div>
+            <div class="prog-bar"><div class="prog-fill green" id="pb-breach" style="width:10%"></div></div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-label"><span>STEALTH</span><span id="skill-stealth">5</span></div>
+            <div class="prog-bar"><div class="prog-fill blue" id="pb-stealth" style="width:5%"></div></div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-label"><span>DECRYPT</span><span id="skill-decrypt">8</span></div>
+            <div class="prog-bar"><div class="prog-fill purple" id="pb-decrypt" style="width:8%"></div></div>
+          </div>
+          <div class="prog-item">
+            <div class="prog-label"><span>EXPLOIT</span><span id="skill-exploit">3</span></div>
+            <div class="prog-bar"><div class="prog-fill green" id="pb-exploit" style="width:3%"></div></div>
+          </div>
+        </div>
+        <div class="sys-panel">
+          <div class="sys-title">ACHIEVEMENTS</div>
+          <div id="achievements-list"></div>
+        </div>
+        <div class="sys-panel" style="grid-column:1/-1">
+          <div class="sys-title">MISSION HISTORY</div>
+          <div id="mission-history" style="font-size:11px;color:var(--text-dim);line-height:2">No missions completed yet.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div id="result-overlay">
+  <div id="result-box">
+    <div class="result-icon" id="result-icon">✓</div>
+    <div class="result-title" id="result-title">CONTRACT COMPLETE</div>
+    <div class="result-detail" id="result-detail"></div>
+    <div class="result-earned" id="result-earned"></div>
+    <button class="btn btn-green" onclick="closeResult()">▶ RETURN TO TERMINAL</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// GAME STATE
+// ============================================================
+const G = {
+  cc: 250,
+  xp: 0,
+  lvl: 1,
+  rep: 0,
+  contractsRun: 0,
+  contractsWon: 0,
+  totalEarned: 0,
+  inventory: [], // tool ids
+  currentMission: null,
+  missionInterval: null,
+  history: [],
+  skills: { breach: 10, stealth: 5, decrypt: 8, exploit: 3 },
+  achievements: {}
+};
+
+// ============================================================
+// DATA
+// ============================================================
+const TOOLS = [
+  { id: 'ice_spike', name: 'ICE Spike v2', icon: '⚡', cost: 200, desc: 'Advanced intrusion countermeasure eliminator. Reduces breach time by 20%.', effect: 'Breach speed +20%', stat: 'speedMult', val: 0.2 },
+  { id: 'quantum_hash', name: 'Quantum Hash Cracker', icon: '🔮', cost: 500, desc: 'Brute-force quantum decryption module. Unlocks HARD tier contracts.', effect: 'Unlocks Hard contracts', stat: 'unlockHard', val: true },
+  { id: 'ghost_proxy', name: 'Ghost Proxy Mesh', icon: '🕸', cost: 350, desc: 'Multi-layered anonymization network. Reduces trace accumulation by 35%.', effect: 'Trace rate −35%', stat: 'traceMult', val: -0.35 },
+  { id: 'neural_kit', name: 'Neural Scripting Kit', icon: '🧠', cost: 150, desc: 'AI-assisted payload automation. Auto-solves easy mini-puzzles.', effect: 'Auto-solve Easy puzzles', stat: 'autoSolve', val: true },
+  { id: 'blacklight', name: 'Blacklight Scanner', icon: '🔦', cost: 250, desc: 'Deep packet inspection suite. Reveals hidden contract bonuses.', effect: 'Bonus rewards visible', stat: 'revealBonus', val: true },
+  { id: 'darkwire', name: 'DarkWire Tap', icon: '📡', cost: 180, desc: 'Passive network infiltrator. Generates 5 CC per minute passively.', effect: 'Passive income +5 CC/min', stat: 'passive', val: 5 },
+  { id: 'mirror_vm', name: 'Mirror VM Stack', icon: '🪞', cost: 420, desc: 'Decoy virtual machine cluster. Buys 30s extra before trace completes.', effect: 'Trace timer +30s', stat: 'traceBonus', val: 30 },
+  { id: 'zero_day', name: 'Zero Day Exploit', icon: '💀', cost: 750, desc: 'Rare unpatched vulnerability. Guarantees mission success once.', effect: 'One-time guaranteed win', stat: 'guarantee', val: 1 },
+];
+
+const CONTRACT_TYPES = [
+  { id: 'recon', name: 'Recon Sweep', target: 'HelixCorp Node', diff: 1, reward: 80, bonus: 20, time: 30, trace: 0.4, type: 'RECON', risk: 'LOW', req: [], desc: 'Passive scan of a corporate node for vulnerabilities. Low exposure, quick turnaround.', game: 'cipher' },
+  { id: 'data_ex', name: 'Data Extraction', target: 'Nexus Archive', diff: 2, reward: 180, bonus: 40, time: 45, trace: 0.6, type: 'DATA EX', risk: 'MEDIUM', req: [], desc: 'Simulated file retrieval from a secured data partition. Expect light countermeasures.', game: 'symbols' },
+  { id: 'fw_breach', name: 'Firewall Breach', target: 'Axiom Data Vault', diff: 3, reward: 320, bonus: 80, time: 55, trace: 0.85, type: 'BREACH', risk: 'HIGH', req: ['ice_spike'], desc: 'Forced entry through an enterprise-grade firewall. Requires ICE Spike v2.', game: 'symbols' },
+  { id: 'crypto_heist', name: 'Crypto Heist', target: 'Elysium Exchange', diff: 4, reward: 550, bonus: 120, time: 65, trace: 1.1, type: 'HEIST', risk: 'EXTREME', req: ['quantum_hash'], desc: 'Full asset exfiltration from a live crypto exchange. Intense trace countermeasures active.', game: 'cipher' },
+  { id: 'ghost_contract', name: 'Ghost Contract', target: '█████████', diff: 3, reward: 0, bonus: 0, time: 50, trace: 0.75, type: 'GHOST', risk: 'UNKNOWN', req: [], desc: 'Classified directive. Target and reward undisclosed until mission complete. High variance.', game: 'symbols', ghost: true },
+  { id: 'recon2', name: 'Node Sweep', target: 'TitanSoft Dev Cluster', diff: 1, reward: 60, bonus: 15, time: 25, trace: 0.3, type: 'RECON', risk: 'LOW', req: [], desc: 'Quick sweep of a development node. Entry-level contract.', game: 'cipher' },
+  { id: 'siphon', name: 'Credit Siphon', target: 'Meridian Bank API', diff: 2, reward: 200, bonus: 50, time: 40, trace: 0.65, type: 'SIPHON', risk: 'MEDIUM', req: [], desc: 'API-level credit redirection. Medium risk, clean vector.', game: 'symbols' },
+  { id: 'blacksite', name: 'Blacksite Infiltration', target: 'Umbra Research Facility', diff: 4, reward: 480, bonus: 100, time: 60, trace: 1.0, type: 'INFILTRATE', risk: 'EXTREME', req: ['quantum_hash', 'ghost_proxy'], desc: 'Deep network penetration of a classified research facility. Two advanced tools required.', game: 'symbols' },
+];
+
+const TERMINAL_BOOT = [
+  '[BOOT] GHOSTNODE OS v1.3.7 initializing...',
+  '[BOOT] Loading kernel modules...',
+  '[NET] Establishing encrypted tunnel...',
+  '[NET] Ghost Proxy Mesh: checking status...',
+  '[SYS] Memory allocation: 512MB / 1024MB',
+  '[AUTH] Operator credentials verified.',
+  '[NET] Connected to darknet relay node #7.',
+  '[SYS] Boot sequence complete. Welcome, ghost_0x.',
+  '[NET] Awaiting directives...',
+];
+
+const LOG_LINES = [
+  '[SCAN] Mapping target node architecture...',
+  '[BREACH] Injecting payload layer 1...',
+  '[SCAN] Identifying open ports: 22, 80, 443, 8080',
+  '[DECRYPT] Running hash collision algorithm...',
+  '[NET] Routing through relay #3...',
+  '[BREACH] ICE countermeasures detected — bypassing...',
+  '[SCAN] Extracting directory structure...',
+  '[BREACH] Kernel buffer overflow initiated...',
+  '[DECRYPT] Cipher block chaining: 34% complete...',
+  '[NET] Spoofing MAC address...',
+  '[BREACH] Privilege escalation: success.',
+  '[SCAN] Locating target data partition...',
+  '[DECRYPT] AES-256 decrypt in progress...',
+  '[NET] Null-routing trace packet...',
+  '[BREACH] Injecting final payload...',
+  '[SCAN] Exfiltrating data stream...',
+];
+
+const BREACH_STAGES = [
+  'INITIALIZING VECTOR...',
+  'SCANNING NODE PERIMETER...',
+  'PROBING OPEN PORTS...',
+  'INJECTING PAYLOAD...',
+  'BYPASSING ICE LAYER...',
+  'ESCALATING PRIVILEGES...',
+  'EXTRACTING DATA STREAM...',
+  'COVERING TRACKS...',
+  'FINALIZING EXTRACTION...',
+];
+
+// Glyphs for symbol game
+const GLYPHS = ['Ψ','Ω','Δ','Λ','Σ','Φ','Π','Θ','Ξ','Γ','ℵ','℃'];
+
+// ============================================================
+// TERMINAL
+// ============================================================
+const termOut = document.getElementById('terminal-output');
+
+function termLog(msg, cls = 't-system') {
+  const el = document.createElement('div');
+  el.className = 't-line ' + cls;
+  el.textContent = msg;
+  termOut.appendChild(el);
+  termOut.scrollTop = termOut.scrollHeight;
+}
+
+async function bootSequence() {
+  for (let i = 0; i < TERMINAL_BOOT.length; i++) {
+    await delay(120 + Math.random() * 80);
+    const cls = i === TERMINAL_BOOT.length - 1 ? 't-success' : (i < 3 ? 't-info' : 't-system');
+    termLog(TERMINAL_BOOT[i], cls);
+  }
+  termLog('');
+  setTimeout(randomTerminalActivity, 3000);
+}
+
+function randomTerminalActivity() {
+  if (G.currentMission) return;
+  const msgs = [
+    { text: '[NET] Darknet relay heartbeat: OK', cls: 't-system' },
+    { text: '[SYS] Garbage collection: cleared 12MB', cls: 't-system' },
+    { text: '[WARN] Unknown probe detected on relay #2 — rerouting.', cls: 't-warn' },
+    { text: '[NET] Encrypted channel refreshed.', cls: 't-info' },
+    { text: '[SYS] Ghost Proxy Mesh: rotating nodes...', cls: 't-system' },
+    { text: '[NET] DarkWire passive monitor: nominal', cls: 't-system' },
+  ];
+  const m = msgs[Math.floor(Math.random() * msgs.length)];
+  termLog(m.text, m.cls);
+  setTimeout(randomTerminalActivity, 4000 + Math.random() * 8000);
+}
+
+document.getElementById('fake-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim().toLowerCase();
+    e.target.value = '';
+    handleCommand(val);
+  }
+});
+
+const COMMANDS = {
+  help: () => {
+    termLog('[HELP] Available commands:', 't-info');
+    termLog('  contracts  — view available contracts', 't-system');
+    termLog('  market     — open black market', 't-system');
+    termLog('  inventory  — view installed tools', 't-system');
+    termLog('  status     — show operator status', 't-system');
+    termLog('  clear      — clear terminal', 't-system');
+  },
+  contracts: () => { navTo('contracts'); },
+  market: () => { navTo('market'); },
+  inventory: () => { navTo('inventory'); },
+  status: () => {
+    termLog(`[STATUS] Operator: ghost_0x | Level: ${G.lvl} | CC: ${G.cc}`, 't-info');
+    termLog(`[STATUS] Tools: ${G.inventory.length} | Contracts run: ${G.contractsRun}`, 't-info');
+  },
+  clear: () => { termOut.innerHTML = ''; },
+};
+
+function handleCommand(cmd) {
+  termLog(`ghost_0x@node:~$ ${cmd}`, 't-breach');
+  if (COMMANDS[cmd]) {
+    COMMANDS[cmd]();
+  } else if (cmd === '') {
+    // nothing
+  } else {
+    termLog(`[ERR] Unknown command: '${cmd}'. Type 'help'.`, 't-error');
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navTo(name) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  const nav = document.querySelector(`.nav-item[data-screen="${name}"]`);
+  const scr = document.getElementById(`${name}-screen`);
+  if (nav) nav.classList.add('active');
+  if (scr) scr.classList.add('active');
+  if (name === 'market') renderMarket();
+  if (name === 'contracts') renderContracts();
+  if (name === 'inventory') renderInventory();
+  if (name === 'system') renderSystem();
+  if (name === 'terminal') document.getElementById('fake-input').focus();
+}
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navTo(el.dataset.screen));
+});
+
+// ============================================================
+// CONTRACTS
+// ============================================================
+function getPlayerStats() {
+  const inv = G.inventory;
+  const hasIce = inv.includes('ice_spike');
+  const hasProxy = inv.includes('ghost_proxy');
+  const hasQuantum = inv.includes('quantum_hash');
+  const hasNeural = inv.includes('neural_kit');
+  const hasBlack = inv.includes('blacklight');
+  const hasMirror = inv.includes('mirror_vm');
+  return {
+    speedMult: 1 + (hasIce ? 0.2 : 0),
+    traceMult: 1 + (hasProxy ? -0.35 : 0),
+    autoSolve: hasNeural,
+    revealBonus: hasBlack,
+    unlockHard: hasQuantum,
+    traceBonus: hasMirror ? 30 : 0,
+  };
+}
+
+function renderContracts() {
+  const stats = getPlayerStats();
+  document.getElementById('cs-speed').textContent = stats.speedMult.toFixed(1) + 'x';
+  document.getElementById('cs-shield').textContent = stats.traceMult < 1 ? Math.round((1 - stats.traceMult) * 100) + '%' : '0%';
+  document.getElementById('cs-auto').textContent = stats.autoSolve ? 'YES' : 'NO';
+  document.getElementById('cs-bonus').textContent = stats.revealBonus ? 'YES' : 'NO';
+  document.getElementById('trace-mod').textContent = stats.traceMult.toFixed(2) + 'x';
+
+  const toolList = document.getElementById('active-tools-list');
+  if (G.inventory.length === 0) {
+    toolList.innerHTML = 'No tools installed.';
+  } else {
+    toolList.innerHTML = G.inventory.map(id => {
+      const t = TOOLS.find(t => t.id === id);
+      return `<div>${t.icon} ${t.name}</div>`;
+    }).join('');
+  }
+
+  const list = document.getElementById('contract-list');
+  list.innerHTML = '';
+  CONTRACT_TYPES.forEach(c => {
+    const locked = c.req.some(r => !G.inventory.includes(r));
+    const card = document.createElement('div');
+    card.className = 'contract-card' + (locked ? ' locked' : '');
+
+    const stars = Array.from({length: 5}, (_, i) =>
+      `<span class="star ${i < c.diff ? 'filled' : 'empty'}">${i < c.diff ? '★' : '☆'}</span>`
+    ).join('');
+
+    let reward = c.ghost ? '???–500' : c.reward;
+    if (stats.revealBonus && !c.ghost) reward = c.reward + c.bonus;
+
+    const reqText = c.req.length ? `<div class="cc-req">⚠ REQUIRES: ${c.req.map(r => TOOLS.find(t=>t.id===r)?.name).join(', ')}</div>` : '';
+
+    card.innerHTML = `
+      <div class="cc-header">
+        <div class="cc-title">${c.name}: ${c.target}</div>
+        <div class="cc-diff">${stars}</div>
+      </div>
+      <div class="cc-meta">
+        <span class="cc-reward">⬡ ${reward} CC</span>
+        <span class="cc-type">[${c.type}]</span>
+        <span class="cc-risk">RISK: ${c.risk}</span>
+      </div>
+      <div class="cc-desc">${c.desc}</div>
+      ${reqText}
+      <button class="btn ${locked ? 'btn-locked' : 'btn-blue'} btn-sm" ${locked ? 'disabled' : ''}>${locked ? '[LOCKED]' : '[ACCEPT CONTRACT]'}</button>
+    `;
+    if (!locked) {
+      card.querySelector('button').addEventListener('click', () => startMission(c));
+    }
+    list.appendChild(card);
+  });
+}
+
+// ============================================================
+// MISSION
+// ============================================================
+function startMission(contract) {
+  G.currentMission = { ...contract, traceVal: 0, breachVal: 0, elapsed: 0, logTimer: 0, logIdx: 0, stageIdx: 0, success: false };
+  navTo('mission');
+  setStatus('RUNNING CONTRACT');
+
+  const m = G.currentMission;
+  const stats = getPlayerStats();
+
+  // Setup UI
+  document.getElementById('m-title').textContent = `${contract.type}: ${contract.target.toUpperCase()}`;
+  document.getElementById('trace-fill').style.height = '0%';
+  document.getElementById('breach-bar').style.width = '0%';
+  document.getElementById('breach-pct').textContent = '0%';
+  document.getElementById('breach-label').textContent = 'INITIALIZING...';
+  document.getElementById('mission-log').innerHTML = '';
+  document.getElementById('minigame-area').innerHTML = '';
+  document.getElementById('minigame-title').textContent = contract.game === 'cipher' ? 'CIPHER DECODE' : 'NODE MAPPING';
+
+  // Setup tool deploy buttons
+  const bar = document.getElementById('tool-deploy-bar');
+  bar.innerHTML = '';
+  if (G.inventory.includes('ice_spike')) {
+    const b = deployBtn('⚡ Boost Spike', () => { m.breachVal = Math.min(100, m.breachVal + 15); notify('ICE Spike activated! +15% breach'); b.disabled = true; });
+    bar.appendChild(b);
+  }
+  if (G.inventory.includes('ghost_proxy')) {
+    const b = deployBtn('🕸 Deploy Proxy', () => { m.traceVal = Math.max(0, m.traceVal - 20); notify('Ghost Proxy deployed! Trace −20%'); b.disabled = true; });
+    bar.appendChild(b);
+  }
+  if (G.inventory.includes('mirror_vm')) {
+    const b = deployBtn('🪞 Mirror Decoy', () => { m.traceVal = Math.max(0, m.traceVal - 30); notify('Mirror VM deployed! Trace −30%'); b.disabled = true; });
+    bar.appendChild(b);
+  }
+
+  // Timer
+  let timeLeft = contract.time + stats.traceBonus;
+  document.getElementById('m-timer').textContent = fmtTime(timeLeft);
+
+  // Start mini-game
+  if (contract.game === 'cipher' && !stats.autoSolve) {
+    setupCipherGame();
+  } else if (contract.game === 'symbols' && !stats.autoSolve) {
+    setupSymbolGame();
+  } else if (stats.autoSolve) {
+    document.getElementById('minigame-area').innerHTML = '<div style="color:var(--green-dim);font-size:12px;margin-top:8px">[NEURAL KIT] Auto-solving puzzle...</div>';
+    m.gameBonus = 20;
+  }
+
+  G.missionInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('m-timer').textContent = fmtTime(timeLeft);
+
+    // Breach progress
+    const speedBonus = stats.speedMult;
+    const baseInc = (100 / contract.time) * speedBonus;
+    m.breachVal = Math.min(100, m.breachVal + baseInc);
+    m.breachVal = Math.min(100, m.breachVal + (m.gameBonus || 0) * 0.05);
+
+    document.getElementById('breach-bar').style.width = m.breachVal + '%';
+    document.getElementById('breach-pct').textContent = Math.round(m.breachVal) + '%';
+
+    // Stage label
+    const stageIdx = Math.floor((m.breachVal / 100) * BREACH_STAGES.length);
+    document.getElementById('breach-label').textContent = BREACH_STAGES[Math.min(stageIdx, BREACH_STAGES.length - 1)];
+
+    // Trace
+    const traceInc = (contract.trace * stats.traceMult) * (100 / (contract.time * 1.2));
+    m.traceVal = Math.min(100, m.traceVal + traceInc);
+    document.getElementById('trace-fill').style.height = m.traceVal + '%';
+    document.getElementById('trace-pct-val').textContent = Math.round(m.traceVal);
+
+    // Log lines
+    m.logTimer++;
+    if (m.logTimer % 3 === 0) {
+      const line = LOG_LINES[m.logIdx % LOG_LINES.length];
+      m.logIdx++;
+      missionLog(line, m.traceVal > 70 ? 't-warn' : 't-system');
+    }
+
+    // Check end conditions
+    if (m.breachVal >= 100 || timeLeft <= 0 || m.traceVal >= 100) {
+      clearInterval(G.missionInterval);
+      G.missionInterval = null;
+      const won = m.breachVal >= 100 && m.traceVal < 100;
+      endMission(won, contract, stats);
+    }
+  }, 1000);
+}
+
+function deployBtn(label, fn) {
+  const b = document.createElement('button');
+  b.className = 'deploy-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  return b;
+}
+
+function missionLog(msg, cls) {
+  const log = document.getElementById('mission-log');
+  const el = document.createElement('div');
+  el.className = 't-line ' + cls;
+  el.textContent = msg;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function endMission(won, contract, stats) {
+  G.contractsRun++;
+  G.currentMission = null;
+  setStatus('IDLE');
+
+  let earned = 0;
+  if (won) {
+    G.contractsWon++;
+    earned = contract.ghost ? (100 + Math.floor(Math.random() * 450)) : contract.reward;
+    if (stats.revealBonus && !contract.ghost) earned += contract.bonus;
+    if (G.inventory.includes('zero_day') && !G._zeroUsed) { earned = Math.round(earned * 1.5); G._zeroUsed = true; }
+    G.cc += earned;
+    G.totalEarned += earned;
+    G.xp += Math.round(earned * 0.3 + contract.diff * 10);
+    G.rep = Math.min(100, G.rep + contract.diff * 5);
+    updateSkills(contract);
+    checkLevel();
+    checkAchievements();
+  }
+
+  G.history.unshift({ name: contract.name, target: contract.target, won, earned, time: new Date().toLocaleTimeString() });
+
+  updateHUD();
+  showResult(won, contract, earned);
+}
+
+function updateSkills(contract) {
+  G.skills.breach = Math.min(100, G.skills.breach + contract.diff * 2);
+  G.skills.stealth = Math.min(100, G.skills.stealth + (G.inventory.includes('ghost_proxy') ? 3 : 1));
+  G.skills.decrypt = Math.min(100, G.skills.decrypt + (contract.game === 'cipher' ? 3 : 1));
+  G.skills.exploit = Math.min(100, G.skills.exploit + contract.diff);
+}
+
+function checkLevel() {
+  const lvlThresholds = [0, 200, 500, 1000, 2000, 4000, 8000, 15000];
+  for (let i = lvlThresholds.length - 1; i >= 0; i--) {
+    if (G.xp >= lvlThresholds[i]) { G.lvl = i + 1; break; }
+  }
+}
+
+const RANK_NAMES = ['Novice', 'Lurker', 'Script Kiddie', 'Gray Hat', 'Black Hat', 'Elite', 'Ghost', 'Legend'];
+function getRank() { return RANK_NAMES[Math.min(G.lvl - 1, RANK_NAMES.length - 1)]; }
+
+// ============================================================
+// MINI-GAMES
+// ============================================================
+function setupCipherGame() {
+  const words = ['ENCRYPT', 'DECRYPT', 'FIREWALL', 'PAYLOAD', 'NETMASK', 'EXPLOIT', 'KERNEL', 'BYPASS'];
+  const word = words[Math.floor(Math.random() * words.length)];
+  const scrambled = word.split('').sort(() => Math.random() - 0.5).join('');
+
+  const area = document.getElementById('minigame-area');
+  area.innerHTML = `
+    <div class="cipher-wrap">
+      <div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">UNSCRAMBLE THE CODE WORD</div>
+      <div class="cipher-prompt" id="cipher-prompt">${scrambled}</div>
+      <input class="cipher-input" id="cipher-input" maxlength="${word.length}" placeholder="TYPE ANSWER..." autocomplete="off" spellcheck="false">
+      <div style="font-size:10px;color:var(--text-dim);margin-top:6px" id="cipher-feedback"></div>
+    </div>
+  `;
+
+  const input = document.getElementById('cipher-input');
+  input.focus();
+  input.addEventListener('input', () => {
+    const val = input.value.toUpperCase();
+    if (val === word) {
+      document.getElementById('cipher-feedback').textContent = '✓ CORRECT — Breach bonus +20%';
+      document.getElementById('cipher-feedback').style.color = 'var(--green)';
+      if (G.currentMission) G.currentMission.gameBonus = 20;
+      input.disabled = true;
+    }
+  });
+}
+
+function setupSymbolGame() {
+  const area = document.getElementById('minigame-area');
+  area.innerHTML = '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px">MATCH THE SYMBOL PAIRS</div>';
+
+  const count = 4;
+  const symbols = GLYPHS.slice(0, count);
+  const tiles = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
+
+  const grid = document.createElement('div');
+  grid.className = 'symbol-grid';
+
+  let selected = [], solved = 0, locked = false;
+
+  tiles.forEach((sym, idx) => {
+    const tile = document.createElement('div');
+    tile.className = 'sym-tile';
+    tile.textContent = sym;
+    tile.dataset.sym = sym;
+    tile.dataset.idx = idx;
+
+    tile.addEventListener('click', () => {
+      if (locked || tile.classList.contains('matched') || tile.classList.contains('selected')) return;
+      tile.classList.add('selected');
+      selected.push(tile);
+
+      if (selected.length === 2) {
+        locked = true;
+        const [a, b] = selected;
+        if (a.dataset.sym === b.dataset.sym) {
+          a.classList.remove('selected'); a.classList.add('matched');
+          b.classList.remove('selected'); b.classList.add('matched');
+          solved++;
+          selected = []; locked = false;
+          if (solved === count) {
+            area.insertAdjacentHTML('beforeend', '<div style="color:var(--green);font-size:11px;margin-top:8px">✓ ALL PAIRS MATCHED — Breach bonus +25%</div>');
+            if (G.currentMission) G.currentMission.gameBonus = 25;
+          }
+        } else {
+          setTimeout(() => {
+            a.classList.remove('selected'); a.classList.add('wrong');
+            b.classList.remove('selected'); b.classList.add('wrong');
+            setTimeout(() => { a.classList.remove('wrong'); b.classList.remove('wrong'); selected = []; locked = false; }, 400);
+          }, 300);
+        }
+      }
+    });
+    grid.appendChild(tile);
+  });
+
+  area.appendChild(grid);
+}
+
+// ============================================================
+// RESULT
+// ============================================================
+function showResult(won, contract, earned) {
+  const overlay = document.getElementById('result-overlay');
+  overlay.classList.add('show');
+  document.getElementById('result-icon').textContent = won ? '✓' : '✗';
+  document.getElementById('result-title').textContent = won ? 'CONTRACT COMPLETE' : 'MISSION FAILED';
+  document.getElementById('result-title').className = 'result-title ' + (won ? 'success' : 'fail');
+  document.getElementById('result-detail').textContent = won
+    ? `Target: ${contract.target}\nType: ${contract.type}\nTrace level: ${Math.round(G.history[0]?.won ? 0 : 100)}% (survived)`
+    : `Target: ${contract.target}\nType: ${contract.type}\nCause: ${G.currentMission?.traceVal >= 100 ? 'TRACE OVERLOAD' : 'TIMEOUT'}`;
+  document.getElementById('result-earned').textContent = won ? `⬡ +${earned} CC` : '';
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.remove('show');
+  navTo('terminal');
+  termLog('');
+  termLog(`[MISSION] Contract outcome logged. Balance: ${G.cc} CC`, G.contractsWon === G.contractsRun ? 't-success' : 't-error');
+}
+
+// ============================================================
+// BLACK MARKET
+// ============================================================
+function renderMarket() {
+  document.getElementById('wallet-cc').textContent = G.cc;
+  const cards = document.getElementById('tool-cards');
+  cards.innerHTML = '';
+
+  TOOLS.forEach(tool => {
+    const owned = G.inventory.includes(tool.id);
+    const card = document.createElement('div');
+    card.className = 'tool-card' + (owned ? ' owned' : '');
+    card.innerHTML = `
+      <div class="tc-icon">${tool.icon}</div>
+      <div class="tc-name">${tool.name}</div>
+      <div class="tc-desc">${tool.desc}</div>
+      <div class="tc-cost">${owned ? '✓ INSTALLED' : `⬡ ${tool.cost} CC`}</div>
+      ${owned
+        ? `<div class="owned-badge">✓ OWNED</div>`
+        : `<button class="btn btn-green btn-sm" ${G.cc < tool.cost ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''} onclick="buyTool('${tool.id}')">BUY</button>`}
+    `;
+    cards.appendChild(card);
+  });
+
+  const sumEl = document.getElementById('inv-summary');
+  sumEl.innerHTML = G.inventory.length === 0
+    ? 'No tools owned.'
+    : G.inventory.map(id => { const t = TOOLS.find(t => t.id === id); return `${t.icon} ${t.name}`; }).join('<br>');
+}
+
+function buyTool(id) {
+  const tool = TOOLS.find(t => t.id === id);
+  if (!tool || G.inventory.includes(id) || G.cc < tool.cost) return;
+  G.cc -= tool.cost;
+  G.inventory.push(id);
+  updateHUD();
+  renderMarket();
+  notify(`${tool.icon} ${tool.name} installed!`);
+  termLog(`[MARKET] Purchased: ${tool.name} for ${tool.cost} CC`, 't-info');
+}
+
+// ============================================================
+// INVENTORY
+// ============================================================
+function renderInventory() {
+  const grid = document.getElementById('inv-grid');
+  const empty = document.getElementById('inv-empty');
+  const detail = document.getElementById('inv-detail');
+  grid.innerHTML = '';
+
+  if (G.inventory.length === 0) {
+    empty.style.display = 'block';
+    detail.innerHTML = '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px">NO TOOLS INSTALLED</div><div style="font-size:10px;color:var(--text-dim);margin-top:8px">Visit the Black Market to purchase tools.</div>';
+    return;
+  }
+  empty.style.display = 'none';
+
+  G.inventory.forEach(id => {
+    const tool = TOOLS.find(t => t.id === id);
+    const item = document.createElement('div');
+    item.className = 'inv-item';
+    item.innerHTML = `<div class="inv-icon">${tool.icon}</div><div class="inv-name">${tool.name}</div><div class="inv-effect">${tool.effect}</div>`;
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.inv-item').forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      detail.innerHTML = `
+        <div class="inv-d-icon">${tool.icon}</div>
+        <div class="inv-d-name">${tool.name}</div>
+        <div class="inv-d-desc">${tool.desc}</div>
+        <div class="inv-d-stat">EFFECT: ${tool.effect}</div>
+        <div class="inv-d-stat" style="color:var(--text-dim);font-size:10px;margin-top:8px">COST: ${tool.cost} CC</div>
+      `;
+    });
+    grid.appendChild(item);
+  });
+}
+
+// ============================================================
+// SYSTEM
+// ============================================================
+const ACHIEVEMENTS_DEF = [
+  { id: 'first_blood', name: 'First Blood', desc: 'Complete your first contract', icon: '🩸', check: () => G.contractsWon >= 1 },
+  { id: 'shopper', name: 'Black Market Regular', desc: 'Purchase any tool', icon: '🛒', check: () => G.inventory.length >= 1 },
+  { id: 'arsenal', name: 'Fully Armed', desc: 'Own 5 tools', icon: '⚙', check: () => G.inventory.length >= 5 },
+  { id: 'crypto_rich', name: 'Crypto Rich', desc: 'Accumulate 1000 CC', icon: '💰', check: () => G.totalEarned >= 1000 },
+  { id: 'ghost', name: 'Ghost Protocol', desc: 'Install the Ghost Proxy Mesh', icon: '👻', check: () => G.inventory.includes('ghost_proxy') },
+  { id: 'hard_target', name: 'Hard Target', desc: 'Complete 5 contracts', icon: '🎯', check: () => G.contractsWon >= 5 },
+];
+
+function checkAchievements() {
+  ACHIEVEMENTS_DEF.forEach(a => {
+    if (!G.achievements[a.id] && a.check()) {
+      G.achievements[a.id] = true;
+      notify(`🏆 Achievement unlocked: ${a.name}`);
+      termLog(`[ACH] Achievement unlocked: ${a.name}`, 't-success');
+    }
+  });
+}
+
+function renderSystem() {
+  // Skills
+  ['breach','stealth','decrypt','exploit'].forEach(s => {
+    document.getElementById(`skill-${s}`).textContent = G.skills[s];
+    document.getElementById(`pb-${s}`).style.width = G.skills[s] + '%';
+  });
+
+  // Achievements
+  const alist = document.getElementById('achievements-list');
+  alist.innerHTML = '';
+  ACHIEVEMENTS_DEF.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'achievement' + (G.achievements[a.id] ? '' : ' ach-locked');
+    el.innerHTML = `<div class="ach-icon">${a.icon}</div><div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>`;
+    alist.appendChild(el);
+  });
+
+  // History
+  const hist = document.getElementById('mission-history');
+  if (G.history.length === 0) {
+    hist.textContent = 'No missions completed yet.';
+  } else {
+    hist.innerHTML = G.history.slice(0, 10).map(h =>
+      `<div style="color:${h.won ? 'var(--green)' : 'var(--red)'}">
+        ${h.won ? '✓' : '✗'} ${h.name}: ${h.target} — ${h.won ? '+'+h.earned+' CC' : 'FAILED'} <span style="color:var(--text-dim);font-size:10px">${h.time}</span>
+      </div>`
+    ).join('');
+  }
+}
+
+// ============================================================
+// HUD
+// ============================================================
+function updateHUD() {
+  document.getElementById('cc-amount').textContent = G.cc.toLocaleString();
+  document.getElementById('xp-val').textContent = G.xp;
+  document.getElementById('lvl-val').textContent = G.lvl;
+  document.getElementById('rank-text').textContent = getRank();
+  document.getElementById('rep-pct').textContent = G.rep;
+  document.getElementById('rep-fill').style.width = G.rep + '%';
+  document.getElementById('stat-contracts').textContent = G.contractsRun;
+  document.getElementById('stat-tools').textContent = G.inventory.length;
+  document.getElementById('stat-earned').textContent = G.totalEarned;
+  document.getElementById('stat-rate').textContent = G.contractsRun > 0 ? Math.round((G.contractsWon / G.contractsRun) * 100) + '%' : '—';
+}
+
+function setStatus(s) { document.getElementById('status-text').textContent = s; }
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function notify(msg) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+function spawnParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.animationDuration = (8 + Math.random() * 12) + 's';
+    p.style.animationDelay = (-Math.random() * 20) + 's';
+    p.style.width = Math.random() > 0.8 ? '2px' : '1px';
+    p.style.height = (10 + Math.random() * 30) + 'px';
+    container.appendChild(p);
+  }
+}
+
+// ============================================================
+// PASSIVE INCOME
+// ============================================================
+setInterval(() => {
+  if (G.inventory.includes('darkwire')) {
+    G.cc += 5;
+    updateHUD();
+  }
+}, 60000);
+
+// ============================================================
+// UTILS
+// ============================================================
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function fmtTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+
+// ============================================================
+// BOOT
+// ============================================================
+spawnParticles();
+bootSequence();
+updateHUD();
+</script>
+</body>
+</html>
