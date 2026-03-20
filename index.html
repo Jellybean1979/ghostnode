@@ -824,17 +824,114 @@ body::after {
 }
 
 @media (max-width: 520px) {
-  #app { grid-template-columns: 44px 1fr; }
-  .nav-item { padding: 12px 0; justify-content: center; }
+  #app { grid-template-columns: 42px 1fr; }
+  .nav-item { padding: 11px 0; justify-content: center; flex-direction: column; gap: 2px; }
   .nav-item > *:not(.nav-icon) { display: none; }
+  .nav-item.active::before { display: none; }
   #player-info { display: none; }
-  #logo { font-size: 11px; letter-spacing: 2px; }
+  #logo { font-size: 10px; letter-spacing: 1px; }
   #version-tag { display: none; }
-  #status-bar { font-size: 9px; letter-spacing: 1px; }
+  #status-bar { font-size: 9px; letter-spacing: 0px; }
   #currency-display { font-size: 10px; }
   #xp-display { display: none; }
-  .mission-panels { grid-template-columns: 44px 1fr; }
+  .mission-panels { grid-template-columns: 42px 1fr; }
   .terminal-stats { grid-template-columns: 1fr 1fr; }
+  .screen { padding: 12px; }
+  #guide-screen > div { grid-template-columns: 1fr !important; }
+  #guide-toc { display: none; }
+}
+/* === FIELD MANUAL / GUIDE SCREEN === */
+.guide-toc-item {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 5px 0 5px 8px;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+}
+.guide-toc-item:hover { color: var(--green); border-left-color: var(--green); background: var(--green-glow); }
+
+.g-section { margin-bottom: 28px; padding: 0 2px; }
+
+.g-title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--blue);
+  text-shadow: 0 0 8px rgba(0,212,255,0.3);
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--blue-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.g-num {
+  font-size: 9px;
+  color: var(--blue-dim);
+  background: rgba(0,100,150,0.2);
+  border: 1px solid var(--blue-dim);
+  padding: 2px 6px;
+}
+
+.g-body { font-size: 11px; color: var(--text); line-height: 1.85; }
+.g-body p { margin-bottom: 10px; }
+.g-body em { color: var(--amber); font-style: normal; }
+.g-body strong { color: var(--green); }
+
+.g-sub-title { font-family: var(--font-display); font-size: 10px; letter-spacing: 2px; color: var(--green); margin: 10px 0 5px; }
+
+.g-callout { border: 1px solid; padding: 9px 13px; margin: 10px 0; font-size: 10px; line-height: 1.6; }
+.g-clabel { font-size: 8px; letter-spacing: 2px; display: block; margin-bottom: 4px; }
+.g-tip { border-color: var(--green-dim); background: rgba(0,255,65,0.04); }
+.g-tip .g-clabel { color: var(--green); }
+.g-warn { border-color: var(--amber); background: rgba(255,170,0,0.05); }
+.g-warn .g-clabel { color: var(--amber); }
+.g-info { border-color: var(--blue-dim); background: rgba(0,100,200,0.05); }
+.g-info .g-clabel { color: var(--blue); }
+
+.g-loop { display: flex; align-items: center; gap: 0; margin: 14px 0; flex-wrap: wrap; }
+.g-loop-step { background: var(--panel); border: 1px solid var(--border); padding: 10px 12px; text-align: center; flex: 1; min-width: 80px; }
+.g-loop-n { font-size: 8px; color: var(--text-dim); letter-spacing: 2px; display: block; margin-bottom: 3px; }
+.g-loop-name { font-family: var(--font-display); font-size: 9px; color: var(--green); letter-spacing: 1px; }
+.g-loop-arrow { color: var(--green-dim); font-size: 16px; padding: 0 3px; flex-shrink: 0; }
+
+.g-screen-list { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.g-screen-item { display: flex; align-items: flex-start; gap: 10px; background: var(--panel); border: 1px solid var(--border); padding: 10px 12px; font-size: 10px; }
+.g-si-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; color: var(--green); }
+.g-si-name { font-family: var(--font-display); font-size: 9px; letter-spacing: 1px; color: var(--green); margin-bottom: 3px; }
+.g-si-desc { color: var(--text-dim); line-height: 1.5; }
+
+.g-cmd-list { margin: 8px 0; }
+.g-cmd { display: flex; gap: 12px; padding: 6px 0; border-bottom: 1px solid rgba(26,61,26,0.4); font-size: 10px; }
+.g-cmd-key { font-family: var(--font-crt); font-size: 14px; color: var(--green); width: 100px; flex-shrink: 0; }
+.g-cmd-desc { color: var(--text-dim); }
+
+.g-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; }
+.g-table th { font-size: 8px; letter-spacing: 2px; color: var(--text-dim); border-bottom: 1px solid var(--border); padding: 5px 8px; text-align: left; font-weight: normal; }
+.g-table td { padding: 7px 8px; border-bottom: 1px solid rgba(26,61,26,0.4); vertical-align: top; line-height: 1.5; color: var(--text); }
+.g-table tr:hover td { background: var(--green-glow); }
+.g-cost { color: var(--amber); font-family: var(--font-display); font-size: 9px; white-space: nowrap; }
+
+.g-ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; }
+.g-ach { display: flex; align-items: flex-start; gap: 8px; background: var(--panel); border: 1px solid var(--border); padding: 9px 10px; font-size: 10px; }
+.g-ach span { font-size: 16px; flex-shrink: 0; }
+.g-ach-name { color: var(--text); margin-bottom: 2px; }
+.g-ach-cond { color: var(--text-dim); font-size: 9px; }
+
+.g-tips { list-style: none; margin: 10px 0; }
+.g-tips li { padding: 7px 0 7px 18px; border-bottom: 1px solid rgba(26,61,26,0.3); font-size: 10px; color: var(--text-dim); line-height: 1.6; position: relative; }
+.g-tips li::before { content: '▶'; position: absolute; left: 0; color: var(--green-dim); font-size: 8px; top: 10px; }
+.g-tips li strong { color: var(--green); }
+
+@media (max-width: 520px) {
+  #guide-screen > div { grid-template-columns: 1fr !important; }
+  #guide-toc { display: none; }
+  .g-ach-grid { grid-template-columns: 1fr; }
+  .g-loop { flex-direction: column; }
 }
 </style>
 </head>
@@ -860,7 +957,7 @@ body::after {
     <div class="nav-item" data-screen="market"><span class="nav-icon">◆</span>BLACK MARKET</div>
     <div class="nav-item" data-screen="inventory"><span class="nav-icon">▣</span>INVENTORY</div>
     <div class="nav-item" data-screen="system"><span class="nav-icon">◉</span>SYSTEM</div>
-    <a class="nav-item" href="ghostnode-guide.html" target="_blank" style="text-decoration:none"><span class="nav-icon">?</span>FIELD MANUAL</a>
+    <div class="nav-item" data-screen="guide"><span class="nav-icon">?</span>FIELD MANUAL</div>
     <div class="sidebar-spacer"></div>
     <div id="player-info">
       <div>ALIAS: <span style="color:var(--green)">ghost_0x</span></div>
@@ -1033,6 +1130,201 @@ body::after {
         </div>
       </div>
     </div>
+
+    <!-- FIELD MANUAL -->
+    <div id="guide-screen" class="screen">
+      <div style="display:grid;grid-template-columns:180px 1fr;gap:20px;height:100%">
+
+        <!-- Guide TOC -->
+        <nav id="guide-toc" style="background:var(--panel);border:1px solid var(--border);padding:14px;overflow-y:auto;height:100%">
+          <div style="font-size:9px;letter-spacing:3px;color:var(--text-dim);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">// CONTENTS</div>
+          <a class="guide-toc-item" href="#g-overview">01. Overview</a>
+          <a class="guide-toc-item" href="#g-loop">02. Game Loop</a>
+          <a class="guide-toc-item" href="#g-screens">03. The Screens</a>
+          <a class="guide-toc-item" href="#g-currency">04. Currency</a>
+          <a class="guide-toc-item" href="#g-tools">05. Tools</a>
+          <a class="guide-toc-item" href="#g-contracts">06. Contracts Ref</a>
+          <a class="guide-toc-item" href="#g-minigames">07. Mini-Games</a>
+          <a class="guide-toc-item" href="#g-progression">08. Progression</a>
+          <a class="guide-toc-item" href="#g-achievements">09. Achievements</a>
+          <a class="guide-toc-item" href="#g-tips">10. Pro Tips</a>
+        </nav>
+
+        <!-- Guide Content -->
+        <div id="guide-content" style="overflow-y:auto;height:100%;padding-right:4px">
+
+          <div class="g-section" id="g-overview">
+            <div class="g-title"><span class="g-num">01</span>OVERVIEW</div>
+            <div class="g-body">
+              <p><strong>GHOSTNODE</strong> is a browser-based hacker simulation game. You play as <em>ghost_0x</em> — an anonymous operator running darknet contracts for <em>CipherCoins (CC)</em>. None of the hacking is real; all mechanics are thematic simulations.</p>
+              <p>Your goal: run contracts, earn CC, buy tools from the Black Market, unlock harder contracts, and climb the operator ranks from <em>Novice</em> all the way to <em>Legend</em>.</p>
+              <div class="g-callout g-info"><span class="g-clabel">// NOTE</span>Progress exists in your current browser session only. Refreshing resets everything.</div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-loop">
+            <div class="g-title"><span class="g-num">02</span>GAME LOOP</div>
+            <div class="g-body">
+              <p>Every session follows the same three-phase loop:</p>
+              <div class="g-loop">
+                <div class="g-loop-step"><span class="g-loop-n">PHASE 1</span><span class="g-loop-name">ACCEPT CONTRACT</span></div>
+                <div class="g-loop-arrow">→</div>
+                <div class="g-loop-step"><span class="g-loop-n">PHASE 2</span><span class="g-loop-name">RUN MISSION</span></div>
+                <div class="g-loop-arrow">→</div>
+                <div class="g-loop-step"><span class="g-loop-n">PHASE 3</span><span class="g-loop-name">GET PAID</span></div>
+                <div class="g-loop-arrow">→</div>
+                <div class="g-loop-step" style="border-color:var(--blue-dim)"><span class="g-loop-n">REPEAT</span><span class="g-loop-name" style="color:var(--blue)">BUY TOOLS</span></div>
+              </div>
+              <p>Completing contracts earns <em>CipherCoins</em> and <em>XP</em>. XP raises your level and rank. CC is spent in the Black Market on tools that make missions faster, safer, or unlock harder tiers.</p>
+              <div class="g-callout g-tip"><span class="g-clabel">// TIP</span>Start with easy Recon contracts to stack early CC, then invest in <strong>Ghost Proxy Mesh</strong> before attempting ★★★ or higher.</div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-screens">
+            <div class="g-title"><span class="g-num">03</span>THE SCREENS</div>
+            <div class="g-body">
+              <p>Use the left sidebar to navigate. Here's what each screen does:</p>
+              <div class="g-screen-list">
+                <div class="g-screen-item"><span class="g-si-icon">▶</span><div><div class="g-si-name">TERMINAL</div><div class="g-si-desc">Home base. Boot sequence, ambient logs, 4 stat boxes, and a fake command line. Type <strong>help</strong> for commands.</div></div></div>
+                <div class="g-screen-item"><span class="g-si-icon">◈</span><div><div class="g-si-name">CONTRACTS</div><div class="g-si-desc">All available contracts. Locked cards need specific tools. Right sidebar shows your current stats and trace modifier.</div></div></div>
+                <div class="g-screen-item"><span class="g-si-icon">⚠</span><div><div class="g-si-name">MISSION</div><div class="g-si-desc">Auto-opens when a contract starts. Shows breach bar, trace meter, timer, terminal log, mini-game, and tool deploy buttons.</div></div></div>
+                <div class="g-screen-item"><span class="g-si-icon">◆</span><div><div class="g-si-name">BLACK MARKET</div><div class="g-si-desc">Underground tool shop. Browse all tools, see costs and effects. Click BUY to purchase — CC deducted immediately.</div></div></div>
+                <div class="g-screen-item"><span class="g-si-icon">▣</span><div><div class="g-si-name">INVENTORY</div><div class="g-si-desc">All installed tools. Click any tool to see its full stats. Tools are always active — no manual equipping needed.</div></div></div>
+                <div class="g-screen-item"><span class="g-si-icon">◉</span><div><div class="g-si-name">SYSTEM</div><div class="g-si-desc">Operator profile. Four skill bars, achievement tracker, and history of your last 10 missions.</div></div></div>
+              </div>
+              <p style="margin-top:12px">Terminal commands:</p>
+              <div class="g-cmd-list">
+                <div class="g-cmd"><span class="g-cmd-key">help</span><span class="g-cmd-desc">Lists all commands</span></div>
+                <div class="g-cmd"><span class="g-cmd-key">contracts</span><span class="g-cmd-desc">Go to Contracts screen</span></div>
+                <div class="g-cmd"><span class="g-cmd-key">market</span><span class="g-cmd-desc">Open Black Market</span></div>
+                <div class="g-cmd"><span class="g-cmd-key">inventory</span><span class="g-cmd-desc">Open Inventory</span></div>
+                <div class="g-cmd"><span class="g-cmd-key">status</span><span class="g-cmd-desc">Print level, CC, tools owned</span></div>
+                <div class="g-cmd"><span class="g-cmd-key">clear</span><span class="g-cmd-desc">Wipe terminal output</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-currency">
+            <div class="g-title"><span class="g-num">04</span>CURRENCY — CIPHERCOINS (CC)</div>
+            <div class="g-body">
+              <p><strong>CipherCoins (CC)</strong> is shown in the top-right at all times. Earned from contracts, spent in the Black Market. You start with <em>250 CC</em>.</p>
+              <div class="g-callout g-info"><span class="g-clabel">// PASSIVE INCOME</span>The <strong>DarkWire Tap</strong> generates +5 CC every 60 seconds automatically while the game is open.</div>
+              <div class="g-callout g-warn"><span class="g-clabel">// BONUS REWARDS</span>Most contracts have a hidden bonus on top of the base payout. The <strong>Blacklight Scanner</strong> reveals it on the card — and earns it for you on success.</div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-tools">
+            <div class="g-title"><span class="g-num">05</span>TOOLS</div>
+            <div class="g-body">
+              <p>Purchased once, permanently active. Full catalog:</p>
+              <table class="g-table">
+                <thead><tr><th></th><th>NAME</th><th>EFFECT</th><th>COST</th></tr></thead>
+                <tbody>
+                  <tr><td>⚡</td><td>ICE Spike v2</td><td>Breach speed +20%. Deploy button: +15% breach instantly.</td><td class="g-cost">200 CC</td></tr>
+                  <tr><td>🔮</td><td>Quantum Hash Cracker</td><td>Unlocks HARD tier contracts (★★★★).</td><td class="g-cost">500 CC</td></tr>
+                  <tr><td>🕸</td><td>Ghost Proxy Mesh</td><td>Trace rate −35%. Deploy button: cut trace −20% mid-mission.</td><td class="g-cost">350 CC</td></tr>
+                  <tr><td>🧠</td><td>Neural Scripting Kit</td><td>Auto-solves all mini-games, awarding full breach bonus.</td><td class="g-cost">150 CC</td></tr>
+                  <tr><td>🔦</td><td>Blacklight Scanner</td><td>Reveals hidden bonus rewards on contract cards.</td><td class="g-cost">250 CC</td></tr>
+                  <tr><td>📡</td><td>DarkWire Tap</td><td>Passive income: +5 CC per 60 seconds.</td><td class="g-cost">180 CC</td></tr>
+                  <tr><td>🪞</td><td>Mirror VM Stack</td><td>+30s to mission timer. Deploy button: cut trace −30%.</td><td class="g-cost">420 CC</td></tr>
+                  <tr><td>💀</td><td>Zero Day Exploit</td><td>One-time use: first completed mission earns +50% CC bonus.</td><td class="g-cost">750 CC</td></tr>
+                </tbody>
+              </table>
+              <div class="g-callout g-tip"><span class="g-clabel">// RECOMMENDED BUILD ORDER</span>Neural Kit (150) → Ghost Proxy (350) → ICE Spike (200) → Quantum Hash (500)</div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-contracts">
+            <div class="g-title"><span class="g-num">06</span>CONTRACT REFERENCE</div>
+            <div class="g-body">
+              <table class="g-table">
+                <thead><tr><th>CONTRACT</th><th>DIFF</th><th>REWARD</th><th>RISK</th><th>REQUIRES</th></tr></thead>
+                <tbody>
+                  <tr><td>Node Sweep</td><td style="color:#44ff88">★☆☆☆☆</td><td class="g-cost">60 CC</td><td style="color:#44ff88">LOW</td><td style="color:var(--text-dim)">None</td></tr>
+                  <tr><td>Recon Sweep</td><td style="color:#44ff88">★☆☆☆☆</td><td class="g-cost">80 CC</td><td style="color:#44ff88">LOW</td><td style="color:var(--text-dim)">None</td></tr>
+                  <tr><td>Data Extraction</td><td style="color:var(--amber)">★★☆☆☆</td><td class="g-cost">180 CC</td><td style="color:var(--amber)">MEDIUM</td><td style="color:var(--text-dim)">None</td></tr>
+                  <tr><td>Credit Siphon</td><td style="color:var(--amber)">★★☆☆☆</td><td class="g-cost">200 CC</td><td style="color:var(--amber)">MEDIUM</td><td style="color:var(--text-dim)">None</td></tr>
+                  <tr><td>Ghost Contract</td><td style="color:#ff8844">★★★☆☆</td><td class="g-cost">???</td><td style="color:#aaa">UNKNOWN</td><td style="color:var(--text-dim)">None</td></tr>
+                  <tr><td>Firewall Breach</td><td style="color:#ff8844">★★★☆☆</td><td class="g-cost">320 CC</td><td style="color:#ff8844">HIGH</td><td style="color:var(--purple)">ICE Spike v2</td></tr>
+                  <tr><td>Crypto Heist</td><td style="color:var(--red)">★★★★☆</td><td class="g-cost">550 CC</td><td style="color:var(--red)">EXTREME</td><td style="color:var(--purple)">Quantum Hash</td></tr>
+                  <tr><td>Blacksite Infiltration</td><td style="color:var(--red)">★★★★☆</td><td class="g-cost">480 CC</td><td style="color:var(--red)">EXTREME</td><td style="color:var(--purple)">Quantum Hash + Ghost Proxy</td></tr>
+                </tbody>
+              </table>
+              <div class="g-callout g-warn"><span class="g-clabel">// GHOST CONTRACT</span>Mystery target, randomized payout of 100–550 CC. No requirements to attempt it.</div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-minigames">
+            <div class="g-title"><span class="g-num">07</span>MINI-GAMES</div>
+            <div class="g-body">
+              <p>During a mission the mini-game panel presents one of two challenges. Completing it grants a breach bonus. <strong>Neural Scripting Kit</strong> auto-solves both.</p>
+              <div class="g-sub-title">CIPHER DECODE</div>
+              <p>A hacking word is scrambled. Type the correct unscrambled answer and press Enter. Success grants <strong>+20% breach bonus</strong>.</p>
+              <div class="g-sub-title" style="margin-top:12px">NODE MAPPING (SYMBOL MATCH)</div>
+              <p>An 4×2 grid of glyphs — 4 hidden pairs. Tap two tiles to attempt a match. Find all 4 pairs to earn <strong>+25% breach bonus</strong>. Wrong matches flash red and reset.</p>
+              <div class="g-callout g-warn"><span class="g-clabel">// TIMING</span>Trace fills regardless of the mini-game. Don't linger — a partial bonus beats a trace overload.</div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-progression">
+            <div class="g-title"><span class="g-num">08</span>PROGRESSION</div>
+            <div class="g-body">
+              <p>Every completed mission earns XP and updates your skill bars. Skills grow based on contract type and tools used.</p>
+              <table class="g-table" style="margin-bottom:14px">
+                <thead><tr><th>LEVEL</th><th>RANK</th><th>XP REQUIRED</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>Novice</td><td class="g-cost">0</td></tr>
+                  <tr><td>2</td><td>Lurker</td><td class="g-cost">200</td></tr>
+                  <tr><td>3</td><td>Script Kiddie</td><td class="g-cost">500</td></tr>
+                  <tr><td>4</td><td>Gray Hat</td><td class="g-cost">1,000</td></tr>
+                  <tr><td>5</td><td>Black Hat</td><td class="g-cost">2,000</td></tr>
+                  <tr><td>6</td><td>Elite</td><td class="g-cost">4,000</td></tr>
+                  <tr><td>7</td><td>Ghost</td><td class="g-cost">8,000</td></tr>
+                  <tr><td>8</td><td>Legend</td><td class="g-cost">15,000</td></tr>
+                </tbody>
+              </table>
+              <div class="g-callout g-info"><span class="g-clabel">// REPUTATION</span>The REP bar in the sidebar fills as you complete contracts. Cosmetic for now.</div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-achievements">
+            <div class="g-title"><span class="g-num">09</span>ACHIEVEMENTS</div>
+            <div class="g-body">
+              <p>Tracked in the System screen. Unlock automatically and trigger a notification + terminal log entry.</p>
+              <div class="g-ach-grid">
+                <div class="g-ach"><span>🩸</span><div><div class="g-ach-name">First Blood</div><div class="g-ach-cond">Complete your first contract</div></div></div>
+                <div class="g-ach"><span>🛒</span><div><div class="g-ach-name">Black Market Regular</div><div class="g-ach-cond">Purchase any tool</div></div></div>
+                <div class="g-ach"><span>⚙</span><div><div class="g-ach-name">Fully Armed</div><div class="g-ach-cond">Own 5 tools simultaneously</div></div></div>
+                <div class="g-ach"><span>💰</span><div><div class="g-ach-name">Crypto Rich</div><div class="g-ach-cond">Accumulate 1,000 CC total earned</div></div></div>
+                <div class="g-ach"><span>👻</span><div><div class="g-ach-name">Ghost Protocol</div><div class="g-ach-cond">Purchase the Ghost Proxy Mesh</div></div></div>
+                <div class="g-ach"><span>🎯</span><div><div class="g-ach-name">Hard Target</div><div class="g-ach-cond">Complete 5 contracts total</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="g-section" id="g-tips">
+            <div class="g-title"><span class="g-num">10</span>PRO TIPS</div>
+            <div class="g-body">
+              <ul class="g-tips">
+                <li><strong>Buy Neural Kit first (150 CC).</strong> Auto-solving puzzles lets you focus entirely on trace and breach bars.</li>
+                <li><strong>Watch the trace meter, not the timer.</strong> Trace hitting 100% is the actual failure state. Ghost Proxy Mesh is your best defense.</li>
+                <li><strong>Deploy tools early, not late.</strong> Hit "Deploy Proxy" or "Mirror Decoy" when trace hits 50%, not 90%.</li>
+                <li><strong>Ghost Contract is low risk, high variance.</strong> No requirements, same trace as ★★★. Run it when you want a mystery payout.</li>
+                <li><strong>Save Zero Day for Crypto Heist.</strong> +50% on 550 CC = 825 CC in a single run.</li>
+                <li><strong>Blacklight Scanner pays for itself fast.</strong> At 250 CC it reveals bonuses averaging 30–120 CC. Breaks even in 3–4 missions.</li>
+                <li><strong>DarkWire Tap rewards long sessions.</strong> Leave the game open — 5 CC/min adds up to 150 CC over 30 minutes for free.</li>
+                <li><strong>Check System screen periodically.</strong> Watching your skill bars climb is part of the loop.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="padding:20px 0 8px;font-size:10px;color:var(--text-dim);border-top:1px solid var(--border);margin-top:8px">
+            GHOSTNODE OPERATOR FIELD MANUAL // v1.3 &nbsp;|&nbsp; By Gary Langley
+          </div>
+
+        </div><!-- /guide-content -->
+      </div><!-- /guide grid -->
+    </div><!-- /guide-screen -->
 
   </div>
 </div>
@@ -1230,6 +1522,15 @@ function navTo(name) {
   if (name === 'inventory') renderInventory();
   if (name === 'system') renderSystem();
   if (name === 'terminal') document.getElementById('fake-input').focus();
+  if (name === 'guide') {
+    document.querySelectorAll('.guide-toc-item').forEach(a => {
+      a.onclick = e => {
+        e.preventDefault();
+        const target = document.getElementById(a.getAttribute('href').replace('#',''));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    });
+  }
 }
 
 document.querySelectorAll('.nav-item').forEach(el => {
