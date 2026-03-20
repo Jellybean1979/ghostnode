@@ -1326,12 +1326,55 @@ body::after {
           <div class="g-section" id="g-minigames">
             <div class="g-title"><span class="g-num">07</span>MINI-GAMES</div>
             <div class="g-body">
-              <p>During a mission the mini-game panel presents one of two challenges. Completing it grants a breach bonus. <strong>Neural Scripting Kit</strong> auto-solves both.</p>
-              <div class="g-sub-title">CIPHER DECODE</div>
-              <p>A hacking word is scrambled. Type the correct unscrambled answer and press Enter. Success grants <strong>+20% breach bonus</strong>.</p>
-              <div class="g-sub-title" style="margin-top:12px">NODE MAPPING (SYMBOL MATCH)</div>
-              <p>An 4×2 grid of glyphs — 4 hidden pairs. Tap two tiles to attempt a match. Find all 4 pairs to earn <strong>+25% breach bonus</strong>. Wrong matches flash red and reset.</p>
-              <div class="g-callout g-warn"><span class="g-clabel">// TIMING</span>Trace fills regardless of the mini-game. Don't linger — a partial bonus beats a trace overload.</div>
+              <p>Each stage in a contract randomly assigns one of 6 mini-game types. You must complete it before the stage timer runs out or the trace meter hits 100%. All 6 are explained in full below.</p>
+              <div class="g-callout g-tip"><span class="g-clabel">// SHORTCUTS</span><strong>Neural Kit</strong> auto-solves any game type instantly. <strong>Zero Day</strong> skips the stage entirely without playing. Both consume one charge from your stock.</div>
+
+              <div class="g-sub-title">1. CIPHER DECODE</div>
+              <p>A hacking-related word has been scrambled into a random order. Your job is to figure out the original word and type it correctly.</p>
+              <p><strong>Example:</strong> You see <span style="color:var(--amber);font-family:var(--font-crt)">YTCERPE</span> — the answer is <span style="color:var(--green);font-family:var(--font-crt)">ENCRYPT</span>. Type the unscrambled word into the input field. It checks automatically as you type — no need to press Enter. The game completes the moment you type the correct answer.</p>
+              <div class="g-callout g-info"><span class="g-clabel">// TIP</span>All words are hacking terms: ENCRYPT, DECRYPT, FIREWALL, PAYLOAD, NETMASK, EXPLOIT, KERNEL, BYPASS, ROOTKIT, TROJAN, DAEMON, SUBNET. Knowing the word list helps a lot.</div>
+
+              <div class="g-sub-title">2. SYMBOL MATCH</div>
+              <p>An 8-tile grid is shown, containing 4 pairs of matching symbols hidden in random positions. Tap two tiles to flip them — if they match, they stay revealed. If they don't match, they flash red and reset.</p>
+              <p><strong>Goal:</strong> Find all 4 matching pairs. You can take as many attempts as needed — there is no penalty for wrong guesses beyond wasted time.</p>
+              <div class="g-callout g-info"><span class="g-clabel">// TIP</span>Remember where mismatched tiles were. On your second attempt at a tile you already saw, you can often complete the pair immediately.</div>
+
+              <div class="g-sub-title">3. BINARY DECODER</div>
+              <p>You are shown an 8-digit binary number (made up of only 0s and 1s) and must convert it to its decimal (normal number) equivalent.</p>
+              <p><strong>How binary works:</strong> Each digit position represents a power of 2, from right to left: 128, 64, 32, 16, 8, 4, 2, 1. Add up the values of every position that has a 1.</p>
+              <p><strong>Example:</strong> <span style="color:var(--amber);font-family:var(--font-crt)">00001010</span></p>
+              <table class="g-table" style="margin:6px 0 10px">
+                <thead><tr><th>128</th><th>64</th><th>32</th><th>16</th><th>8</th><th>4</th><th>2</th><th>1</th></tr></thead>
+                <tbody><tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td></tr></tbody>
+              </table>
+              <p>Positions with a 1: <strong>8</strong> and <strong>2</strong>. Answer: <span style="color:var(--green)">8 + 2 = 10</span>. Type 10 into the input field to complete the stage.</p>
+              <div class="g-callout g-info"><span class="g-clabel">// QUICK REFERENCE</span>Common values to memorize: 1=1, 2=2, 4=4, 8=8, 16=16, 32=32, 64=64, 128=128. The game only uses numbers from 1 to 63, so you never need 128.</div>
+
+              <div class="g-sub-title">4. TYPING RACE</div>
+              <p>A line of hacker-style terminal code is displayed. You must type it exactly as shown, character by character, including spaces and symbols.</p>
+              <p>As you type, each character turns <span style="color:var(--green)">green</span> if correct or <span style="color:var(--red)">red</span> if wrong. The progress bar at the bottom fills as you advance. The stage completes the instant you type the full string correctly.</p>
+              <p><strong>Example commands you might see:</strong> <span style="color:var(--amber);font-family:var(--font-crt)">chmod 777 payload.sh</span> &nbsp; or &nbsp; <span style="color:var(--amber);font-family:var(--font-crt)">ssh ghost@node7.darknet</span></p>
+              <div class="g-callout g-warn"><span class="g-clabel">// IMPORTANT</span>If you make a typo, you do NOT need to delete back to it — just keep typing. The red characters show where you went wrong, but the game checks the full string. Delete back to the error and retype from there for the best result.</div>
+
+              <div class="g-sub-title">5. SEQUENCE MEMORY</div>
+              <p>A set of symbol tiles is shown. The game flashes a sequence of those symbols in a specific order — watch carefully. After the sequence plays, you must tap the tiles back in the exact same order.</p>
+              <p><strong>How to play:</strong></p>
+              <p>1. Watch the tiles flash one at a time. The status label reads <em>WATCH THE SEQUENCE</em> during this phase — do not tap anything yet.</p>
+              <p>2. When it switches to <em>NOW REPEAT IT</em>, tap the tiles in the same order you saw them flash.</p>
+              <p>3. If you tap the wrong tile, the game replays the full sequence from the beginning. There is no limit on retries.</p>
+              <div class="g-callout g-info"><span class="g-clabel">// TIP</span>The sequence is always 4 symbols long. Say them out loud or in your head as they flash — even a quick mental label like "plus, star, circle, hash" is enough to hold the pattern for a few seconds.</div>
+
+              <div class="g-sub-title">6. WIRE TRACE</div>
+              <p>A 5x5 grid of cells is shown. Your goal is to trace a connected path from the <strong style="color:var(--green)">S</strong> (start) cell in the top-left corner to the <strong style="color:var(--amber)">E</strong> (end) cell in the bottom-right corner.</p>
+              <p><strong>Step by step:</strong></p>
+              <p>1. Tap the <strong style="color:var(--green)">S</strong> cell first to begin tracing. The status bar will say <em>Tracing...</em></p>
+              <p>2. Tap cells one at a time to build your path. You can only move to cells that are <strong>directly adjacent</strong> (up, down, left, right — no diagonals). Each new cell must be next to the last one you tapped.</p>
+              <p>3. <strong style="color:var(--red)"># cells are walls</strong> — you cannot tap them. Plan your route around them.</p>
+              <p>4. When you tap the <strong style="color:var(--amber)">E</strong> cell, the game checks if your path is valid. If it is, the path lights up green and the stage completes. If not, tap <strong style="color:var(--green)">S</strong> again to reset and try a different route.</p>
+              <div class="g-callout g-warn"><span class="g-clabel">// KEY RULE</span>There is always exactly one valid path from S to E. It only goes right or down — never left or up. So if you are ever forced to go left or up to avoid walls, that route will fail. Start over and find a path that moves only right and downward.</div>
+              <div class="g-callout g-info"><span class="g-clabel">// TIP</span>Look at the grid before tapping anything. Trace the route mentally first. The valid path is always direct — it just winds around the walls.</div>
+
+              <div class="g-callout g-warn" style="margin-top:16px"><span class="g-clabel">// TIMING REMINDER</span>The trace meter fills throughout the entire mission regardless of which game is showing. A failed or slow stage costs trace as well as time. If trace is getting critical, use <strong>Ghost Proxy</strong> to halve the rate for that stage, or <strong>Zero Day</strong> to skip it entirely.</div>
             </div>
           </div>
 
