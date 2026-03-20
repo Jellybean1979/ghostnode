@@ -1353,6 +1353,7 @@ const G = {
   contractsWon: 0,
   totalEarned: 0,
   inventory: [], // tool ids
+  neuralKitCharges: 0,
   currentMission: null,
   missionInterval: null,
   history: [],
@@ -1367,7 +1368,7 @@ const TOOLS = [
   { id: 'ice_spike', name: 'ICE Spike v2', icon: '⚡', cost: 200, desc: 'Advanced intrusion countermeasure eliminator. Reduces breach time by 20%.', effect: 'Breach speed +20%', stat: 'speedMult', val: 0.2 },
   { id: 'quantum_hash', name: 'Quantum Hash Cracker', icon: '🔮', cost: 500, desc: 'Brute-force quantum decryption module. Unlocks HARD tier contracts.', effect: 'Unlocks Hard contracts', stat: 'unlockHard', val: true },
   { id: 'ghost_proxy', name: 'Ghost Proxy Mesh', icon: '🕸', cost: 350, desc: 'Multi-layered anonymization network. Reduces trace accumulation by 35%.', effect: 'Trace rate −35%', stat: 'traceMult', val: -0.35 },
-  { id: 'neural_kit', name: 'Neural Scripting Kit', icon: '🧠', cost: 150, desc: 'AI-assisted payload automation. Auto-solves easy mini-puzzles.', effect: 'Auto-solve Easy puzzles', stat: 'autoSolve', val: true },
+  { id: 'neural_kit', name: 'Neural Scripting Kit', icon: '🧠', cost: 150, desc: 'AI-assisted payload automation. Single-use charge — manually deploy during a mission to instantly solve the puzzle. Stackable.', effect: 'Manual puzzle solve (1 charge)', stat: 'autoSolve', val: true },
   { id: 'blacklight', name: 'Blacklight Scanner', icon: '🔦', cost: 250, desc: 'Deep packet inspection suite. Reveals hidden contract bonuses.', effect: 'Bonus rewards visible', stat: 'revealBonus', val: true },
   { id: 'darkwire', name: 'DarkWire Tap', icon: '📡', cost: 180, desc: 'Passive network infiltrator. Generates 5 CC per minute passively.', effect: 'Passive income +5 CC/min', stat: 'passive', val: 5 },
   { id: 'mirror_vm', name: 'Mirror VM Stack', icon: '🪞', cost: 420, desc: 'Decoy virtual machine cluster. Buys 30s extra before trace completes.', effect: 'Trace timer +30s', stat: 'traceBonus', val: 30 },
@@ -1545,13 +1546,11 @@ function getPlayerStats() {
   const hasIce = inv.includes('ice_spike');
   const hasProxy = inv.includes('ghost_proxy');
   const hasQuantum = inv.includes('quantum_hash');
-  const hasNeural = inv.includes('neural_kit');
   const hasBlack = inv.includes('blacklight');
   const hasMirror = inv.includes('mirror_vm');
   return {
     speedMult: 1 + (hasIce ? 0.2 : 0),
     traceMult: 1 + (hasProxy ? -0.35 : 0),
-    autoSolve: hasNeural,
     revealBonus: hasBlack,
     unlockHard: hasQuantum,
     traceBonus: hasMirror ? 30 : 0,
@@ -1562,18 +1561,21 @@ function renderContracts() {
   const stats = getPlayerStats();
   document.getElementById('cs-speed').textContent = stats.speedMult.toFixed(1) + 'x';
   document.getElementById('cs-shield').textContent = stats.traceMult < 1 ? Math.round((1 - stats.traceMult) * 100) + '%' : '0%';
-  document.getElementById('cs-auto').textContent = stats.autoSolve ? 'YES' : 'NO';
+  document.getElementById('cs-auto').textContent = G.neuralKitCharges > 0 ? `x${G.neuralKitCharges}` : 'NONE';
   document.getElementById('cs-bonus').textContent = stats.revealBonus ? 'YES' : 'NO';
   document.getElementById('trace-mod').textContent = stats.traceMult.toFixed(2) + 'x';
 
   const toolList = document.getElementById('active-tools-list');
-  if (G.inventory.length === 0) {
+  if (G.inventory.length === 0 && G.neuralKitCharges === 0) {
     toolList.innerHTML = 'No tools installed.';
   } else {
-    toolList.innerHTML = G.inventory.map(id => {
+    const lines = G.inventory.map(id => {
       const t = TOOLS.find(t => t.id === id);
+      if (t.id === 'neural_kit') return null; // shown separately
       return `<div>${t.icon} ${t.name}</div>`;
-    }).join('');
+    }).filter(Boolean);
+    if (G.neuralKitCharges > 0) lines.push(`<div>🧠 Neural Kit <span style="color:var(--amber)">x${G.neuralKitCharges}</span></div>`);
+    toolList.innerHTML = lines.length ? lines.join('') : 'No tools installed.';
   }
 
   const list = document.getElementById('contract-list');
@@ -1649,19 +1651,34 @@ function startMission(contract) {
     const b = deployBtn('🪞 Mirror Decoy', () => { m.traceVal = Math.max(0, m.traceVal - 30); notify('Mirror VM deployed! Trace −30%'); b.disabled = true; });
     bar.appendChild(b);
   }
+  if (G.neuralKitCharges > 0) {
+    const updateNeuralBtn = () => {
+      neuralBtn.textContent = `🧠 Neural Kit (x${G.neuralKitCharges})`;
+      neuralBtn.disabled = G.neuralKitCharges <= 0;
+    };
+    const neuralBtn = deployBtn(`🧠 Neural Kit (x${G.neuralKitCharges})`, () => {
+      if (G.neuralKitCharges <= 0) return;
+      G.neuralKitCharges--;
+      m.gameBonus = 25;
+      document.getElementById('minigame-area').innerHTML =
+        '<div style="color:var(--green);font-size:12px;margin-top:8px">✓ [NEURAL KIT] Puzzle auto-solved — breach bonus +25%</div>';
+      notify(`🧠 Neural Kit used! Charges remaining: ${G.neuralKitCharges}`);
+      termLog(`[NEURAL KIT] Charge consumed. ${G.neuralKitCharges} remaining.`, 't-info');
+      updateHUD();
+      neuralBtn.disabled = true;
+    });
+    bar.appendChild(neuralBtn);
+  }
 
   // Timer
   let timeLeft = contract.time + stats.traceBonus;
   document.getElementById('m-timer').textContent = fmtTime(timeLeft);
 
-  // Start mini-game
-  if (contract.game === 'cipher' && !stats.autoSolve) {
+  // Start mini-game — always shown, Neural Kit is manual deploy
+  if (contract.game === 'cipher') {
     setupCipherGame();
-  } else if (contract.game === 'symbols' && !stats.autoSolve) {
+  } else {
     setupSymbolGame();
-  } else if (stats.autoSolve) {
-    document.getElementById('minigame-area').innerHTML = '<div style="color:var(--green-dim);font-size:12px;margin-top:8px">[NEURAL KIT] Auto-solving puzzle...</div>';
-    m.gameBonus = 20;
   }
 
   G.missionInterval = setInterval(() => {
@@ -1879,30 +1896,56 @@ function renderMarket() {
   cards.innerHTML = '';
 
   TOOLS.forEach(tool => {
-    const owned = G.inventory.includes(tool.id);
+    const owned = tool.id === 'neural_kit' ? false : G.inventory.includes(tool.id);
     const card = document.createElement('div');
     card.className = 'tool-card' + (owned ? ' owned' : '');
+
+    let costLine, actionLine;
+    if (tool.id === 'neural_kit') {
+      const charges = G.neuralKitCharges;
+      costLine = `<div class="tc-cost">⬡ ${tool.cost} CC &nbsp;<span style="color:var(--amber);font-size:10px">${charges > 0 ? `STOCK: x${charges}` : 'OUT OF STOCK'}</span></div>`;
+      actionLine = `<button class="btn btn-green btn-sm" ${G.cc < tool.cost ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''} onclick="buyTool('${tool.id}')">BUY CHARGE</button>`;
+    } else if (owned) {
+      costLine = `<div class="tc-cost">✓ INSTALLED</div>`;
+      actionLine = `<div class="owned-badge">✓ OWNED</div>`;
+    } else {
+      costLine = `<div class="tc-cost">⬡ ${tool.cost} CC</div>`;
+      actionLine = `<button class="btn btn-green btn-sm" ${G.cc < tool.cost ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''} onclick="buyTool('${tool.id}')">BUY</button>`;
+    }
+
     card.innerHTML = `
       <div class="tc-icon">${tool.icon}</div>
       <div class="tc-name">${tool.name}</div>
       <div class="tc-desc">${tool.desc}</div>
-      <div class="tc-cost">${owned ? '✓ INSTALLED' : `⬡ ${tool.cost} CC`}</div>
-      ${owned
-        ? `<div class="owned-badge">✓ OWNED</div>`
-        : `<button class="btn btn-green btn-sm" ${G.cc < tool.cost ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''} onclick="buyTool('${tool.id}')">BUY</button>`}
+      ${costLine}
+      ${actionLine}
     `;
     cards.appendChild(card);
   });
 
   const sumEl = document.getElementById('inv-summary');
-  sumEl.innerHTML = G.inventory.length === 0
-    ? 'No tools owned.'
-    : G.inventory.map(id => { const t = TOOLS.find(t => t.id === id); return `${t.icon} ${t.name}`; }).join('<br>');
+  const summaryLines = G.inventory.filter(id => id !== 'neural_kit').map(id => {
+    const t = TOOLS.find(t => t.id === id);
+    return `${t.icon} ${t.name}`;
+  });
+  if (G.neuralKitCharges > 0) summaryLines.push(`🧠 Neural Kit x${G.neuralKitCharges}`);
+  sumEl.innerHTML = summaryLines.length === 0 ? 'No tools owned.' : summaryLines.join('<br>');
 }
 
 function buyTool(id) {
   const tool = TOOLS.find(t => t.id === id);
-  if (!tool || G.inventory.includes(id) || G.cc < tool.cost) return;
+  if (!tool || G.cc < tool.cost) return;
+  // Neural Kit is consumable — stackable charges, never goes into inventory
+  if (id === 'neural_kit') {
+    G.cc -= tool.cost;
+    G.neuralKitCharges++;
+    updateHUD();
+    renderMarket();
+    notify(`🧠 Neural Kit charge added! Total: x${G.neuralKitCharges}`);
+    termLog(`[MARKET] Neural Kit charge purchased. Stock: x${G.neuralKitCharges}`, 't-info');
+    return;
+  }
+  if (G.inventory.includes(id)) return;
   G.cc -= tool.cost;
   G.inventory.push(id);
   updateHUD();
@@ -1920,12 +1963,33 @@ function renderInventory() {
   const detail = document.getElementById('inv-detail');
   grid.innerHTML = '';
 
-  if (G.inventory.length === 0) {
+  const hasItems = G.inventory.length > 0 || G.neuralKitCharges > 0;
+  if (!hasItems) {
     empty.style.display = 'block';
     detail.innerHTML = '<div style="font-size:10px;color:var(--text-dim);letter-spacing:2px">NO TOOLS INSTALLED</div><div style="font-size:10px;color:var(--text-dim);margin-top:8px">Visit the Black Market to purchase tools.</div>';
     return;
   }
   empty.style.display = 'none';
+
+  // Show neural kit charges as a special consumable item
+  if (G.neuralKitCharges > 0) {
+    const item = document.createElement('div');
+    item.className = 'inv-item';
+    item.innerHTML = `<div class="inv-icon">🧠</div><div class="inv-name">Neural Scripting Kit</div><div class="inv-effect" style="color:var(--amber)">CHARGES: x${G.neuralKitCharges}</div>`;
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.inv-item').forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      detail.innerHTML = `
+        <div class="inv-d-icon">🧠</div>
+        <div class="inv-d-name">Neural Scripting Kit</div>
+        <div class="inv-d-desc">AI-assisted payload automation. Deploy during a mission to instantly solve the mini-game puzzle. Each use consumes one charge. Stackable — buy more from the Black Market.</div>
+        <div class="inv-d-stat">CHARGES REMAINING: <span style="color:var(--amber)">x${G.neuralKitCharges}</span></div>
+        <div class="inv-d-stat" style="color:var(--text-dim);font-size:10px;margin-top:8px">COST PER CHARGE: 150 CC</div>
+        <div class="inv-d-stat" style="color:var(--blue-dim);font-size:10px;margin-top:4px">TYPE: CONSUMABLE</div>
+      `;
+    });
+    grid.appendChild(item);
+  }
 
   G.inventory.forEach(id => {
     const tool = TOOLS.find(t => t.id === id);
