@@ -813,8 +813,28 @@ body::after {
 /* Responsive tweak for smaller screens */
 @media (max-width: 800px) {
   #app { grid-template-columns: 140px 1fr; }
-  .mission-panels { grid-template-columns: 80px 1fr; }
-  .minigame-panel { display: none; }
+  .mission-panels {
+    grid-template-columns: 60px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .minigame-panel {
+    grid-column: 1 / -1;
+    min-height: 160px;
+  }
+}
+
+@media (max-width: 520px) {
+  #app { grid-template-columns: 44px 1fr; }
+  .nav-item { padding: 12px 0; justify-content: center; }
+  .nav-item > *:not(.nav-icon) { display: none; }
+  #player-info { display: none; }
+  #logo { font-size: 11px; letter-spacing: 2px; }
+  #version-tag { display: none; }
+  #status-bar { font-size: 9px; letter-spacing: 1px; }
+  #currency-display { font-size: 10px; }
+  #xp-display { display: none; }
+  .mission-panels { grid-template-columns: 44px 1fr; }
+  .terminal-stats { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -840,6 +860,7 @@ body::after {
     <div class="nav-item" data-screen="market"><span class="nav-icon">◆</span>BLACK MARKET</div>
     <div class="nav-item" data-screen="inventory"><span class="nav-icon">▣</span>INVENTORY</div>
     <div class="nav-item" data-screen="system"><span class="nav-icon">◉</span>SYSTEM</div>
+    <a class="nav-item" href="ghostnode-guide.html" target="_blank" style="text-decoration:none"><span class="nav-icon">?</span>FIELD MANUAL</a>
     <div class="sidebar-spacer"></div>
     <div id="player-info">
       <div>ALIAS: <span style="color:var(--green)">ghost_0x</span></div>
@@ -1739,11 +1760,31 @@ function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 function fmtTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 
 // ============================================================
+// COMMIT HASH
+// ============================================================
+async function updateCommitHash() {
+  try {
+    const res = await fetch('https://api.github.com/repos/jellybean1979/ghostnode/commits?per_page=1');
+    if (!res.ok) return;
+    const data = await res.json();
+    const sha = data[0]?.sha?.substring(0, 7);
+    if (sha) {
+      const el = document.getElementById('commit-hash');
+      el.textContent = sha;
+      el.href = `https://github.com/jellybean1979/ghostnode/commit/${data[0].sha}`;
+    }
+  } catch (e) {
+    // silently fail — hash stays as '......'
+  }
+}
+
+// ============================================================
 // BOOT
 // ============================================================
 spawnParticles();
 bootSequence();
 updateHUD();
+updateCommitHash();
 </script>
 </body>
 </html>
