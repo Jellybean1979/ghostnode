@@ -1080,6 +1080,11 @@ body::after {
       <div class="contracts-grid">
         <div class="contract-list" id="contract-list"></div>
         <div class="contract-sidebar">
+          <div class="sidebar-panel" id="blacklight-panel">
+            <div class="sp-title">BLACKLIGHT SCANNER</div>
+            <div id="blacklight-status" style="font-size:10px;color:var(--text-dim);line-height:1.8;margin-bottom:10px">Scan to reveal hidden bonus rewards on all contracts.</div>
+            <button class="btn btn-green btn-sm" id="scan-btn" onclick="doContractScan()" style="width:100%">SCAN CONTRACTS</button>
+          </div>
           <div class="sidebar-panel">
             <div class="sp-title">CONSUMABLE STOCK</div>
             <div id="stock-list" style="font-size:10px;color:var(--text-dim);line-height:2">No consumables.</div>
@@ -1327,7 +1332,7 @@ body::after {
             <div class="g-title"><span class="g-num">07</span>MINI-GAMES</div>
             <div class="g-body">
               <p>Each stage in a contract randomly assigns one of 6 mini-game types. You must complete it before the stage timer runs out or the trace meter hits 100%. All 6 are explained in full below.</p>
-              <div class="g-callout g-tip"><span class="g-clabel">// SHORTCUTS</span><strong>Neural Kit</strong> auto-solves any game type instantly. <strong>Zero Day</strong> skips the stage entirely without playing. Both consume one charge from your stock.</div>
+              <div class="g-callout g-tip"><span class="g-clabel">// SHORTCUTS</span><strong>Neural Kit</strong> auto-solves any game type instantly. <strong>Zero Day</strong> skips the stage entirely without playing. Both consume one charge from your stock. <strong>Blacklight Scanner</strong> is used on the Contracts screen before picking a job, not during missions.</div>
 
               <div class="g-sub-title">1. CIPHER DECODE</div>
               <p>A hacking-related word has been scrambled into a random order. Your job is to figure out the original word and type it correctly.</p>
@@ -1353,7 +1358,7 @@ body::after {
               <div class="g-sub-title">4. TYPING RACE</div>
               <p>A line of hacker-style terminal code is displayed. You must type it exactly as shown, character by character, including spaces and symbols.</p>
               <p>As you type, each character turns <span style="color:var(--green)">green</span> if correct or <span style="color:var(--red)">red</span> if wrong. The progress bar at the bottom fills as you advance. The stage completes the instant you type the full string correctly.</p>
-              <p><strong>Example commands you might see:</strong> <span style="color:var(--amber);font-family:var(--font-crt)">chmod 777 payload.sh</span> &nbsp; or &nbsp; <span style="color:var(--amber);font-family:var(--font-crt)">ssh ghost@node7.darknet</span></p>
+              <p><strong>Example commands you might see:</strong> <span style="color:var(--amber);font-family:var(--font-crt)">chmod 777 payload.sh</span> &nbsp; or &nbsp; <span style="color:var(--amber);font-family:var(--font-crt)">ssh <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aacdc2c5d9deeac4c5cecf9d84cecbd8c1c4cfde">[email&#160;protected]</a></span></p>
               <div class="g-callout g-warn"><span class="g-clabel">// IMPORTANT</span>If you make a typo, you do NOT need to delete back to it — just keep typing. The red characters show where you went wrong, but the game checks the full string. Delete back to the error and retype from there for the best result.</div>
 
               <div class="g-sub-title">5. SEQUENCE MEMORY</div>
@@ -1452,14 +1457,14 @@ body::after {
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ============================================================
 // STATE
 // ============================================================
 const G = {
   cc:250, xp:0, lvl:1, rep:0,
   contractsRun:0, contractsWon:0, totalEarned:0,
-  inventory:[], stock:{},
+  inventory:[], stock:{}, contractsScanned:false,
   currentMission:null, missionInterval:null,
   history:[], skills:{breach:10,stealth:5,decrypt:8,exploit:3}, achievements:{}
 };
@@ -1472,7 +1477,7 @@ const TOOLS = [
   {id:'quantum_hash', name:'Quantum Hash Cracker',  icon:'🔮',cost:500,consumable:false, desc:'Quantum decryption module. Permanently unlocks HARD tier contracts once purchased.', effect:'Unlocks Hard contracts (permanent)'},
   {id:'ghost_proxy',  name:'Ghost Proxy Mesh',      icon:'🕸',cost:350,consumable:true,  desc:'Multi-layer anonymizer. Deploy on one stage: halves trace accumulation for that stage.', effect:'Trace rate -50% (one stage)'},
   {id:'neural_kit',   name:'Neural Scripting Kit',  icon:'🧠',cost:150,consumable:true,  desc:'AI payload automation. Deploy on one stage: instantly auto-solves the mini-game.', effect:'Auto-solve mini-game (one stage)'},
-  {id:'blacklight',   name:'Blacklight Scanner',    icon:'🔦',cost:250,consumable:true,  desc:'Deep packet inspector. Deploy on one stage: reveals and earns the hidden bonus CC.', effect:'Reveal + earn bonus CC (one stage)'},
+  {id:'blacklight',   name:'Blacklight Scanner',    icon:'🔦',cost:250,consumable:true,  desc:'Pre-mission scanner. Use on the Contracts screen to reveal all hidden bonus rewards on every contract card. Bonus is earned automatically on mission success. Reveals last until you leave the screen.', effect:'Reveal all contract bonuses (Contracts screen)'},
   {id:'darkwire',     name:'DarkWire Tap',          icon:'📡',cost:180,consumable:false, desc:'Passive network infiltrator. Permanently generates +5 CC per minute in the background.', effect:'Passive +5 CC/min (permanent)'},
   {id:'mirror_vm',    name:'Mirror VM Stack',       icon:'🪞',cost:420,consumable:true,  desc:'Decoy VM cluster. Deploy on one stage: adds +20 bonus seconds to that stage timer.', effect:'+20s timer (one stage)'},
   {id:'zero_day',     name:'Zero Day Exploit',      icon:'💀',cost:750,consumable:true,  desc:'Rare unpatched exploit. Deploy on one stage: skips it entirely, counted as complete.', effect:'Skip one stage entirely'},
@@ -1610,7 +1615,39 @@ function totalItems() { return G.inventory.length + Object.values(G.stock).reduc
 // ============================================================
 // CONTRACTS SCREEN
 // ============================================================
+function doContractScan() {
+  if (getStock('blacklight') <= 0) return;
+  useStock('blacklight');
+  G.contractsScanned = true;
+  renderContracts._keepScan = true;
+  notify('Blacklight Scanner: All contract bonuses revealed!');
+  termLog('[BLACKLIGHT] Contract scan complete -- hidden bonuses exposed.', 't-success');
+  renderContracts();
+}
+
 function renderContracts() {
+  // Scan state resets each time you visit the contracts screen
+  if (!renderContracts._keepScan) { G.contractsScanned = false; }
+  renderContracts._keepScan = false;
+
+  // Update blacklight scan button
+  var scanBtn = document.getElementById('scan-btn');
+  var scanStatus = document.getElementById('blacklight-status');
+  var charges = getStock('blacklight');
+  if (G.contractsScanned) {
+    scanStatus.textContent = 'Bonuses revealed! All hidden rewards are now visible.';
+    scanStatus.style.color = 'var(--green)';
+    if (scanBtn) { scanBtn.textContent = 'SCANNED'; scanBtn.disabled = true; scanBtn.style.opacity = '0.5'; }
+  } else if (charges > 0) {
+    scanStatus.textContent = 'Charges: x' + charges + ' -- Click to reveal hidden bonuses.';
+    scanStatus.style.color = 'var(--amber)';
+    if (scanBtn) { scanBtn.textContent = 'SCAN CONTRACTS'; scanBtn.disabled = false; scanBtn.style.opacity = '1'; }
+  } else {
+    scanStatus.textContent = 'No charges. Buy Blacklight Scanner from the Black Market.';
+    scanStatus.style.color = 'var(--text-dim)';
+    if (scanBtn) { scanBtn.textContent = 'NO CHARGES'; scanBtn.disabled = true; scanBtn.style.opacity = '0.4'; }
+  }
+
   var stockEl = document.getElementById('stock-list');
   var cons = TOOLS.filter(function(t) { return t.consumable && getStock(t.id) > 0; });
   stockEl.innerHTML = cons.length
@@ -1638,7 +1675,7 @@ function renderContracts() {
     var stars = Array.from({length:5}, function(_,i) {
       return '<span class="star ' + (i < c.diff ? 'filled' : 'empty') + '">' + (i < c.diff ? '\u2605' : '\u2606') + '</span>';
     }).join('');
-    var showBonus = getStock('blacklight') > 0 && !c.ghost;
+    var showBonus = G.contractsScanned && !c.ghost;
     var rewardText = c.ghost ? '???-550 CC' : (c.reward + (showBonus ? '+' + c.bonus : '') + ' CC');
     var reqText = c.req.length
       ? '<div class="cc-req">REQ: ' + c.req.map(function(r){var t=TOOLS.find(function(t){return t.id===r;});return t?t.name:r;}).join(', ') + '</div>'
@@ -1666,7 +1703,7 @@ function startMission(contract) {
   G.currentMission = Object.assign({}, contract, {
     gameQueue: gameQueue, gameIdx: 0, gamesWon: 0,
     traceVal: 0, timeLeft: contract.timePerGame,
-    logTimer: 0, logIdx: 0, bonusEarned: false,
+    logTimer: 0, logIdx: 0, bonusEarned: G.contractsScanned,
     stageTraceMult: 1, stageSolved: false
   });
   navTo('mission');
@@ -1753,12 +1790,6 @@ function useConsumable(id) {
     document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
     missionLog('[MIRROR VM] Decoy cluster online -- +20s added.', 't-info');
     notify('Mirror VM: +20 seconds!');
-  } else if (id === 'blacklight') {
-    if (!m.bonusEarned) {
-      m.bonusEarned = true;
-      missionLog('[BLACKLIGHT] Hidden bonus unlocked: +' + m.bonus + ' CC on success.', 't-success');
-      notify('Blacklight: +' + m.bonus + ' CC bonus revealed!');
-    }
   } else if (id === 'zero_day') {
     missionLog('[ZERO DAY] Exploit fired -- stage bypassed.', 't-success');
     notify('Zero Day: Stage skipped!');
@@ -2395,14 +2426,3 @@ async function updateCommitHash() {
     }
   } catch(e) {}
 }
-
-// ============================================================
-// BOOT
-// ============================================================
-spawnParticles();
-bootSequence();
-updateHUD();
-updateCommitHash();
-</script>
-</body>
-</html>
