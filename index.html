@@ -1182,12 +1182,12 @@ body::after {
             <div class="prog-bar"><div class="prog-fill green" id="pb-breach" style="width:10%"></div></div>
           </div>
           <div class="prog-item">
-            <div class="prog-label"><span>STEALTH</span><span id="skill-stealth">5</span></div>
-            <div class="prog-bar"><div class="prog-fill blue" id="pb-stealth" style="width:5%"></div></div>
+            <div class="prog-label"><span>STEALTH</span><span id="skill-stealth">0</span></div>
+            <div class="prog-bar"><div class="prog-fill blue" id="pb-stealth" style="width:0%"></div></div>
           </div>
           <div class="prog-item">
-            <div class="prog-label"><span>DECRYPT</span><span id="skill-decrypt">8</span></div>
-            <div class="prog-bar"><div class="prog-fill purple" id="pb-decrypt" style="width:8%"></div></div>
+            <div class="prog-label"><span>DECRYPT</span><span id="skill-decrypt">0</span></div>
+            <div class="prog-bar"><div class="prog-fill purple" id="pb-decrypt" style="width:0%"></div></div>
           </div>
           <div class="prog-item">
             <div class="prog-label"><span>EXPLOIT</span><span id="skill-exploit">3</span></div>
@@ -1386,7 +1386,7 @@ body::after {
           <div class="g-section" id="g-progression">
             <div class="g-title"><span class="g-num">08</span>PROGRESSION</div>
             <div class="g-body">
-              <p>Every completed mission earns XP and updates your skill bars. Skills grow based on contract type and tools used.</p>
+              <p>Every completed contract earns <strong>XP</strong>, which raises your <strong>Level</strong> and <strong>Rank</strong>. Your current level and rank are shown in the top bar and the bottom of the sidebar.</p>
               <table class="g-table" style="margin-bottom:14px">
                 <thead><tr><th>LEVEL</th><th>RANK</th><th>XP REQUIRED</th></tr></thead>
                 <tbody>
@@ -1400,7 +1400,21 @@ body::after {
                   <tr><td>8</td><td>Legend</td><td class="g-cost">15,000</td></tr>
                 </tbody>
               </table>
-              <div class="g-callout g-info"><span class="g-clabel">// REPUTATION</span>The REP bar in the sidebar fills as you complete contracts. Cosmetic for now.</div>
+
+              <div class="g-sub-title">SKILL MATRIX</div>
+              <p>The System screen shows four skill bars that track your operator history. They grow automatically as you complete contracts and are purely cosmetic — a record of your activity rather than stats that affect gameplay.</p>
+              <table class="g-table" style="margin-bottom:10px">
+                <thead><tr><th>SKILL</th><th>GROWS WHEN</th></tr></thead>
+                <tbody>
+                  <tr><td style="color:var(--green)">BREACH</td><td>Completing contracts — higher difficulty = bigger gain</td></tr>
+                  <tr><td style="color:var(--blue)">STEALTH</td><td>+10 per mission where trace stayed under 50% the entire run</td></tr>
+                  <tr><td style="color:var(--purple)">DECRYPT</td><td>+5 per mini-game solved manually (Neural Kit and Zero Day do not count)</td></tr>
+                  <tr><td style="color:var(--green)">EXPLOIT</td><td>Completing contracts — scales with difficulty</td></tr>
+                </tbody>
+              </table>
+              <p>Think of the skill matrix as your operator profile — a visual history of how many contracts you have run and how hard they were. Max out all four bars and you will know you have truly earned your Legend rank.</p>
+
+              <div class="g-callout g-info"><span class="g-clabel">// REPUTATION</span>The REP bar in the left sidebar also fills as you complete contracts. Like the skill matrix, it is cosmetic — a measure of your standing on the darknet.</div>
             </div>
           </div>
 
@@ -1466,7 +1480,7 @@ const G = {
   contractsRun:0, contractsWon:0, totalEarned:0,
   inventory:[], stock:{}, contractsScanned:false,
   currentMission:null, missionInterval:null,
-  history:[], skills:{breach:10,stealth:5,decrypt:8,exploit:3}, achievements:{}
+  history:[], skills:{breach:10,stealth:0,decrypt:0,exploit:3}, achievements:{}
 };
 
 // ============================================================
@@ -1702,9 +1716,9 @@ function startMission(contract) {
   var gameQueue = shuffled.slice(0, contract.diff);
   G.currentMission = Object.assign({}, contract, {
     gameQueue: gameQueue, gameIdx: 0, gamesWon: 0,
-    traceVal: 0, timeLeft: contract.timePerGame,
+    traceVal: 0, peakTrace: 0, timeLeft: contract.timePerGame,
     logTimer: 0, logIdx: 0, bonusEarned: G.contractsScanned,
-    stageTraceMult: 1, stageSolved: false
+    stageTraceMult: 1, stageSolved: false, manualSolves: 0
   });
   navTo('mission');
   setStatus('RUNNING CONTRACT');
@@ -1772,7 +1786,7 @@ function useConsumable(id) {
   if (id === 'neural_kit') {
     missionLog('[NEURAL KIT] AI script injected -- auto-solving.', 't-success');
     notify('Neural Kit: Stage auto-solved!');
-    solveCurrentStage();
+    solveCurrentStage(true);
   } else if (id === 'ice_spike') {
     var cur = parseFloat(document.getElementById('breach-bar').style.width) || 0;
     var nv = Math.min(100, cur + 25);
@@ -1780,7 +1794,7 @@ function useConsumable(id) {
     document.getElementById('breach-pct').textContent = Math.round(nv) + '%';
     missionLog('[ICE SPIKE] Payload boost -- breach +25%.', 't-breach');
     notify('ICE Spike: Breach +25%!');
-    if (nv >= 100) solveCurrentStage();
+    if (nv >= 100) solveCurrentStage(true);
   } else if (id === 'ghost_proxy') {
     m.stageTraceMult = 0.5;
     missionLog('[GHOST PROXY] Anonymization mesh active -- trace halved.', 't-info');
@@ -1793,14 +1807,15 @@ function useConsumable(id) {
   } else if (id === 'zero_day') {
     missionLog('[ZERO DAY] Exploit fired -- stage bypassed.', 't-success');
     notify('Zero Day: Stage skipped!');
-    solveCurrentStage();
+    solveCurrentStage(true);
   }
 }
 
-function solveCurrentStage() {
+function solveCurrentStage(fromConsumable) {
   var m = G.currentMission;
   if (!m || m.stageSolved) return;
   m.stageSolved = true;
+  if (!fromConsumable) m.manualSolves = (m.manualSolves || 0) + 1;
   document.getElementById('breach-bar').style.width = '100%';
   document.getElementById('breach-pct').textContent = '100%';
   document.getElementById('minigame-area').innerHTML = '<div style="color:var(--green);font-size:14px;padding:10px">STAGE COMPLETE</div>';
@@ -1838,6 +1853,7 @@ function missionTick() {
   m.traceVal = Math.min(100, m.traceVal + traceInc);
   document.getElementById('trace-fill').style.height = m.traceVal + '%';
   document.getElementById('trace-pct-val').textContent = Math.round(m.traceVal);
+  if (m.traceVal > m.peakTrace) m.peakTrace = m.traceVal;
   m.logTimer++;
   if (m.logTimer % 4 === 0) {
     missionLog(LOG_LINES[m.logIdx % LOG_LINES.length], m.traceVal > 70 ? 't-warn' : 't-system');
@@ -1904,8 +1920,8 @@ function endMission(won, failReason) {
     G.xp += Math.round(earned * 0.3 + (contract.diff || 1) * 10);
     G.rep = Math.min(100, G.rep + (contract.diff || 1) * 5);
     G.skills.breach = Math.min(100, G.skills.breach + (contract.diff || 1) * 2);
-    G.skills.stealth = Math.min(100, G.skills.stealth + 1);
-    G.skills.decrypt = Math.min(100, G.skills.decrypt + 2);
+    if (contract.peakTrace < 50) G.skills.stealth = Math.min(100, G.skills.stealth + 10);
+    G.skills.decrypt = Math.min(100, G.skills.decrypt + (contract.manualSolves || 0) * 5);
     G.skills.exploit = Math.min(100, G.skills.exploit + (contract.diff || 1));
     checkLevel();
     checkAchievements();
