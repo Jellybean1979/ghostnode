@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GHOSTNODE — Operator Field Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #00ff41;
+  --green-dim: #00aa2b;
+  --green-dark: #003310;
+  --green-glow: rgba(0,255,65,0.12);
+  --blue: #00d4ff;
+  --blue-dim: #0088aa;
+  --purple: #b400ff;
+  --amber: #ffaa00;
+  --red: #ff3333;
+  --bg: #050a05;
+  --bg2: #070f07;
+  --panel: #060d06;
+  --border: #1a3d1a;
+  --text: #ccffcc;
+  --text-dim: #669966;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-display: 'Orbitron', monospace;
+  --font-crt: 'VT323', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  color: var(--green);
+  font-family: var(--font-mono);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* CRT scanlines */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0,255,65,0.01);
+  pointer-events: none;
+  z-index: 9998;
+  animation: flicker 10s infinite;
+}
+@keyframes flicker {
+  0%,100%{opacity:1} 94%{opacity:1} 95%{opacity:0.85} 96%{opacity:1} 98%{opacity:0.9} 99%{opacity:1}
+}
+
+/* ── HEADER ── */
+#header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 40px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+#header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.doc-logo {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--green);
+  text-shadow: 0 0 12px var(--green), 0 0 40px rgba(0,255,65,0.2);
+  line-height: 1;
+}
+.doc-logo span { color: var(--blue); }
+
+.doc-subtitle {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+.doc-meta {
+  text-align: right;
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 2;
+}
+.doc-meta span { color: var(--green-dim); }
+
+/* ── LAYOUT ── */
+#wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 40px;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 28px;
+}
+
+/* ── TOC ── */
+#toc {
+  position: sticky;
+  top: 90px;
+  height: fit-content;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px;
+}
+.toc-title {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.toc-item {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 5px 0 5px 8px;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+.toc-item:hover {
+  color: var(--green);
+  border-left-color: var(--green);
+  background: var(--green-glow);
+}
+.toc-item.sub {
+  font-size: 10px;
+  padding-left: 18px;
+  color: #446644;
+}
+.toc-item.sub:hover { color: var(--green-dim); }
+
+/* ── CONTENT ── */
+#content { min-width: 0; }
+
+.section {
+  margin-bottom: 36px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--blue);
+  text-shadow: 0 0 8px rgba(0,212,255,0.4);
+  margin-bottom: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--blue-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-num {
+  font-size: 10px;
+  color: var(--blue-dim);
+  background: rgba(0,100,150,0.2);
+  border: 1px solid var(--blue-dim);
+  padding: 2px 6px;
+}
+
+.section-body {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.9;
+  margin-top: 14px;
+}
+.section-body p { margin-bottom: 12px; }
+.section-body em { color: var(--amber); font-style: normal; }
+.section-body strong { color: var(--green); }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border: 1px solid;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 11px;
+  line-height: 1.7;
+  position: relative;
+}
+.callout-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  display: block;
+  margin-bottom: 6px;
+}
+.callout.tip { border-color: var(--green-dim); background: rgba(0,255,65,0.04); }
+.callout.tip .callout-label { color: var(--green); }
+.callout.warn { border-color: var(--amber); background: rgba(255,170,0,0.05); }
+.callout.warn .callout-label { color: var(--amber); }
+.callout.danger { border-color: var(--red); background: rgba(255,50,50,0.05); }
+.callout.danger .callout-label { color: var(--red); }
+.callout.info { border-color: var(--blue-dim); background: rgba(0,100,200,0.05); }
+.callout.info .callout-label { color: var(--blue); }
+
+/* ── GAME LOOP DIAGRAM ── */
+.loop-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+.loop-step {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  text-align: center;
+  flex: 1;
+  min-width: 100px;
+}
+.loop-step-num { font-size: 9px; color: var(--text-dim); letter-spacing: 2px; display: block; margin-bottom: 4px; }
+.loop-step-name { font-family: var(--font-display); font-size: 10px; color: var(--green); letter-spacing: 1px; }
+.loop-arrow {
+  color: var(--green-dim);
+  font-size: 18px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ── TOOL TABLE ── */
+.tool-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 11px;
+}
+.tool-table th {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: normal;
+}
+.tool-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(26,61,26,0.5);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.tool-table tr:hover td { background: var(--green-glow); }
+.t-icon { font-size: 16px; }
+.t-name { color: var(--text); font-weight: 600; }
+.t-effect { color: var(--green-dim); }
+.t-cost { color: var(--amber); font-family: var(--font-display); font-size: 10px; white-space: nowrap; }
+
+/* ── CONTRACT TABLE ── */
+.contract-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 11px;
+}
+.contract-table th {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: normal;
+}
+.contract-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(26,61,26,0.5);
+  line-height: 1.5;
+}
+.contract-table tr:hover td { background: rgba(0,100,150,0.05); }
+.diff-1 { color: #44ff88; }
+.diff-2 { color: var(--amber); }
+.diff-3 { color: #ff8844; }
+.diff-4 { color: var(--red); }
+.reward-text { color: var(--green); font-family: var(--font-display); font-size: 10px; }
+
+/* ── SCREEN GUIDE ── */
+.screen-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0;
+}
+.screen-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px;
+}
+.sc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sc-icon { font-size: 16px; }
+.sc-name { font-family: var(--font-display); font-size: 10px; letter-spacing: 1px; color: var(--green); }
+.sc-nav { font-size: 9px; color: var(--text-dim); }
+.sc-desc { font-size: 10px; color: var(--text-dim); line-height: 1.6; }
+
+/* ── STAT BARS ── */
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.stat-label { width: 90px; color: var(--text-dim); flex-shrink: 0; }
+.stat-bar { flex: 1; height: 6px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; }
+.stat-fill { height: 100%; }
+.stat-fill.green { background: var(--green); box-shadow: 0 0 4px var(--green); }
+.stat-fill.blue { background: var(--blue); box-shadow: 0 0 4px var(--blue); }
+.stat-fill.amber { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
+.stat-fill.purple { background: var(--purple); box-shadow: 0 0 4px var(--purple); }
+.stat-val { width: 50px; text-align: right; color: var(--green-dim); font-size: 10px; }
+
+/* ── TERMINAL BLOCK ── */
+.terminal-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  font-family: var(--font-crt);
+  font-size: 17px;
+  line-height: 1.6;
+  margin: 14px 0;
+  position: relative;
+}
+.terminal-block::before {
+  content: 'TERMINAL';
+  position: absolute;
+  top: -9px;
+  left: 12px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  background: var(--bg2);
+  padding: 0 6px;
+  border: 1px solid var(--border);
+}
+.t-s { color: var(--text-dim); }
+.t-g { color: var(--green); }
+.t-a { color: var(--amber); }
+.t-b { color: var(--blue); }
+.t-r { color: var(--red); }
+
+/* ── ACHIEVEMENT LIST ── */
+.ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
+.ach-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.ach-icon { font-size: 18px; flex-shrink: 0; }
+.ach-name { font-size: 11px; color: var(--text); display: block; margin-bottom: 2px; }
+.ach-cond { font-size: 10px; color: var(--text-dim); }
+
+/* ── COMMAND LIST ── */
+.cmd-list { margin: 12px 0; }
+.cmd-item { display: flex; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(26,61,26,0.4); font-size: 11px; }
+.cmd-key { font-family: var(--font-crt); font-size: 16px; color: var(--green); width: 120px; flex-shrink: 0; }
+.cmd-desc { color: var(--text-dim); }
+
+/* ── TIPS LIST ── */
+.tips-list { list-style: none; margin: 12px 0; }
+.tips-list li {
+  padding: 7px 0 7px 20px;
+  border-bottom: 1px solid rgba(26,61,26,0.3);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  position: relative;
+}
+.tips-list li::before {
+  content: '▶';
+  position: absolute;
+  left: 0;
+  color: var(--green-dim);
+  font-size: 9px;
+  top: 9px;
+}
+.tips-list li strong { color: var(--green); }
+
+/* ── RANK TABLE ── */
+.rank-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 11px; }
+.rank-table td { padding: 8px 10px; border-bottom: 1px solid rgba(26,61,26,0.4); }
+.rank-table tr:hover td { background: var(--green-glow); }
+.rank-num { color: var(--blue-dim); font-family: var(--font-display); font-size: 10px; }
+.rank-name { color: var(--text); }
+.rank-xp { color: var(--amber); font-family: var(--font-display); font-size: 10px; }
+
+/* ── FOOTER ── */
+#footer {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 40px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* PRINT */
+@media print {
+  body::before, body::after { display: none; }
+  #toc { position: static; }
+  #wrapper { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  #wrapper { grid-template-columns: 1fr; padding: 20px; }
+  #toc { position: static; }
+  #header { padding: 20px; }
+  #header-inner { flex-direction: column; align-items: flex-start; }
+  .screen-cards, .ach-list { grid-template-columns: 1fr; }
+  .loop-diagram { flex-direction: column; }
+  .loop-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-inner">
+    <div>
+      <div class="doc-logo">GHOST<span>NODE</span></div>
+      <div class="doc-subtitle">// OPERATOR FIELD MANUAL — CLASSIFIED //</div>
+    </div>
+    <div class="doc-meta">
+      DOCUMENT TYPE: <span>PLAYER GUIDE</span><br>
+      CLEARANCE: <span>PUBLIC</span><br>
+      VERSION: <span>v1.3</span>
+    </div>
+  </div>
+</div>
+
+<div id="wrapper">
+
+  <!-- TOC -->
+  <nav id="toc">
+    <div class="toc-title">// CONTENTS</div>
+    <a class="toc-item" href="#overview">01. Overview</a>
+    <a class="toc-item" href="#gameloop">02. Game Loop</a>
+    <a class="toc-item" href="#screens">03. The Screens</a>
+    <a class="toc-item sub" href="#terminal">▸ Terminal</a>
+    <a class="toc-item sub" href="#contracts">▸ Contracts</a>
+    <a class="toc-item sub" href="#mission">▸ Mission</a>
+    <a class="toc-item sub" href="#market">▸ Black Market</a>
+    <a class="toc-item sub" href="#inventory">▸ Inventory</a>
+    <a class="toc-item sub" href="#system">▸ System</a>
+    <a class="toc-item" href="#currency">04. Currency</a>
+    <a class="toc-item" href="#tools">05. Tools</a>
+    <a class="toc-item" href="#contracts-ref">06. Contracts Ref</a>
+    <a class="toc-item" href="#minigames">07. Mini-Games</a>
+    <a class="toc-item" href="#progression">08. Progression</a>
+    <a class="toc-item" href="#achievements">09. Achievements</a>
+    <a class="toc-item" href="#tips">10. Pro Tips</a>
+  </nav>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- OVERVIEW -->
+    <div class="section" id="overview">
+      <div class="section-title"><span class="section-num">01</span>OVERVIEW</div>
+      <div class="section-body">
+        <p>
+          <strong>GHOSTNODE</strong> is a browser-based hacker simulation game. You play as <em>ghost_0x</em> — an anonymous operator working darknet contracts for <em>CipherCoins (CC)</em>. None of the hacking is real; all mechanics are thematic simulations designed to feel like the movies.
+        </p>
+        <p>
+          Your goal is to run contracts, earn CC, spend it on tools in the <em>Black Market</em>, unlock harder contracts, level up, and climb the operator ranks from <em>Novice</em> all the way to <em>Legend</em>.
+        </p>
+        <div class="callout info">
+          <span class="callout-label">// NOTE</span>
+          The game auto-saves nothing — progress exists in your current browser session. Refreshing the page resets everything. Plan your run accordingly.
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME LOOP -->
+    <div class="section" id="gameloop">
+      <div class="section-title"><span class="section-num">02</span>GAME LOOP</div>
+      <div class="section-body">
+        <p>Every session follows the same three-phase loop:</p>
+        <div class="loop-diagram">
+          <div class="loop-step">
+            <span class="loop-step-num">PHASE 1</span>
+            <span class="loop-step-name">ACCEPT CONTRACT</span>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-step">
+            <span class="loop-step-num">PHASE 2</span>
+            <span class="loop-step-name">RUN MISSION</span>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-step">
+            <span class="loop-step-num">PHASE 3</span>
+            <span class="loop-step-name">GET PAID</span>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div class="loop-step" style="border-color:var(--blue-dim)">
+            <span class="loop-step-num">REPEAT</span>
+            <span class="loop-step-name" style="color:var(--blue)">BUY TOOLS</span>
+          </div>
+        </div>
+        <p>Completing contracts earns <em>CipherCoins</em> and <em>XP</em>. XP raises your level and unlocks new rank titles. CC is spent in the Black Market on tools that modify how missions play out — making them faster, safer, or opening up higher-tier contracts.</p>
+        <div class="callout tip">
+          <span class="callout-label">// TIP</span>
+          Start with easy Recon contracts to stack early CC, then invest in the <strong>Ghost Proxy Mesh</strong> before attempting anything rated ★★★ or higher.
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREENS -->
+    <div class="section" id="screens">
+      <div class="section-title"><span class="section-num">03</span>THE SCREENS</div>
+      <div class="section-body">
+        <p>Use the left sidebar to navigate between five screens. Here's what each one does:</p>
+        <div class="screen-cards">
+          <div class="screen-card" id="terminal">
+            <div class="sc-header">
+              <div class="sc-icon">▶</div>
+              <div><div class="sc-name">TERMINAL</div><div class="sc-nav">Sidebar → TERMINAL</div></div>
+            </div>
+            <div class="sc-desc">Your home base. Boots with a startup sequence and displays ambient system logs. Shows your four core stats at the top. Has a fake command line — type <strong>help</strong> for a list of commands. Random network activity prints periodically while idle.</div>
+          </div>
+          <div class="screen-card" id="contracts">
+            <div class="sc-header">
+              <div class="sc-icon">◈</div>
+              <div><div class="sc-name">CONTRACTS</div><div class="sc-nav">Sidebar → CONTRACTS</div></div>
+            </div>
+            <div class="sc-desc">Displays all available contracts as cards. Locked contracts are greyed out — you need the required tools first. The right sidebar shows your current operator stats and trace modifier. Click <strong>[ACCEPT CONTRACT]</strong> to launch a mission.</div>
+          </div>
+          <div class="screen-card" id="mission">
+            <div class="sc-header">
+              <div class="sc-icon">⚠</div>
+              <div><div class="sc-name">MISSION</div><div class="sc-nav">Auto-opens on contract start</div></div>
+            </div>
+            <div class="sc-desc">The live mission screen. Shows the breach progress bar, trace meter, mission countdown timer, and a scrolling terminal log. A mini-game panel appears on the right. You can deploy tools from the bottom bar mid-mission.</div>
+          </div>
+          <div class="screen-card" id="market">
+            <div class="sc-header">
+              <div class="sc-icon">◆</div>
+              <div><div class="sc-name">BLACK MARKET</div><div class="sc-nav">Sidebar → BLACK MARKET</div></div>
+            </div>
+            <div class="sc-desc">The underground tool shop. Browse all available tools, see their effects and costs. Click <strong>BUY</strong> to purchase — the cost is deducted from your wallet immediately. Owned tools are marked with a green badge.</div>
+          </div>
+          <div class="screen-card" id="inventory">
+            <div class="sc-header">
+              <div class="sc-icon">▣</div>
+              <div><div class="sc-name">INVENTORY</div><div class="sc-nav">Sidebar → INVENTORY</div></div>
+            </div>
+            <div class="sc-desc">View all installed tools. Click any tool card to see its full stats and effect description in the right panel. Tools are automatically active — no manual equipping required.</div>
+          </div>
+          <div class="screen-card" id="system">
+            <div class="sc-header">
+              <div class="sc-icon">◉</div>
+              <div><div class="sc-name">SYSTEM</div><div class="sc-nav">Sidebar → SYSTEM</div></div>
+            </div>
+            <div class="sc-desc">Your operator profile. Shows the four skill bars (Breach, Stealth, Decrypt, Exploit), your achievement progress, and a history of the last 10 missions with outcomes and earnings.</div>
+          </div>
+        </div>
+
+        <p style="margin-top:16px">The <strong>Terminal</strong> also accepts typed commands:</p>
+        <div class="cmd-list">
+          <div class="cmd-item"><span class="cmd-key">help</span><span class="cmd-desc">Lists all available commands</span></div>
+          <div class="cmd-item"><span class="cmd-key">contracts</span><span class="cmd-desc">Navigates to the Contracts screen</span></div>
+          <div class="cmd-item"><span class="cmd-key">market</span><span class="cmd-desc">Opens the Black Market</span></div>
+          <div class="cmd-item"><span class="cmd-key">inventory</span><span class="cmd-desc">Opens your Inventory</span></div>
+          <div class="cmd-item"><span class="cmd-key">status</span><span class="cmd-desc">Prints operator level, CC balance, and tools owned</span></div>
+          <div class="cmd-item"><span class="cmd-key">clear</span><span class="cmd-desc">Wipes the terminal output</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENCY -->
+    <div class="section" id="currency">
+      <div class="section-title"><span class="section-num">04</span>CURRENCY — CIPHERCOINS (CC)</div>
+      <div class="section-body">
+        <p>
+          <strong>CipherCoins (CC)</strong> is the in-game currency displayed in the top-right corner at all times. You earn CC by completing contracts. You spend CC in the Black Market.
+        </p>
+        <p>You start with <em>250 CC</em> — enough to buy the Neural Scripting Kit immediately, or save toward the Ghost Proxy Mesh.</p>
+        <div class="callout info">
+          <span class="callout-label">// PASSIVE INCOME</span>
+          If you own the <strong>DarkWire Tap</strong>, it quietly generates <strong>+5 CC every 60 seconds</strong> in the background, even while you're on other screens.
+        </div>
+        <div class="callout warn">
+          <span class="callout-label">// BONUS REWARDS</span>
+          Most contracts have a hidden bonus reward on top of the base payout. Owning the <strong>Blacklight Scanner</strong> reveals this bonus amount on the contract card — and you earn it too.
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLS -->
+    <div class="section" id="tools">
+      <div class="section-title"><span class="section-num">05</span>TOOLS</div>
+      <div class="section-body">
+        <p>Tools are purchased once and remain permanently active. They affect your breach speed, trace rate, and what contracts you can access. Here's the full catalog:</p>
+
+        <table class="tool-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>TOOL NAME</th>
+              <th>EFFECT</th>
+              <th>COST</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="t-icon">⚡</td>
+              <td class="t-name">ICE Spike v2</td>
+              <td class="t-effect">Breach speed +20%. Also adds a mid-mission "Boost Spike" deploy button for an instant +15% breach.</td>
+              <td class="t-cost">200 CC</td>
+            </tr>
+            <tr>
+              <td class="t-icon">🔮</td>
+              <td class="t-name">Quantum Hash Cracker</td>
+              <td class="t-effect">Unlocks HARD tier contracts (★★★★). Required for Crypto Heist and Blacksite Infiltration.</td>
+              <td class="t-cost">500 CC</td>
+            </tr>
+            <tr>
+              <td class="t-icon">🕸</td>
+              <td class="t-name">Ghost Proxy Mesh</td>
+              <td class="t-effect">Reduces trace accumulation rate by 35%. Also adds a "Deploy Proxy" button to cut trace by 20% mid-mission.</td>
+              <td class="t-cost">350 CC</td>
+            </tr>
+            <tr>
+              <td class="t-icon">🧠</td>
+              <td class="t-name">Neural Scripting Kit</td>
+              <td class="t-effect">Automatically solves mini-games on any contract, awarding the bonus breach progress without player input.</td>
+              <td class="t-cost">150 CC</td>
+            </tr>
+            <tr>
+              <td class="t-icon">🔦</td>
+              <td class="t-name">Blacklight Scanner</td>
+              <td class="t-effect">Reveals hidden bonus reward amounts on contract cards. You also earn the bonus on mission success.</td>
+              <td class="t-cost">250 CC</td>
+            </tr>
+            <tr>
+              <td class="t-icon">📡</td>
+              <td class="t-name">DarkWire Tap</td>
+              <td class="t-effect">Passive income: generates +5 CC every 60 seconds automatically in the background.</td>
+              <td class="t-cost">180 CC</td>
+            </tr>
+            <tr>
+              <td class="t-icon">🪞</td>
+              <td class="t-name">Mirror VM Stack</td>
+              <td class="t-effect">Adds 30 seconds to the mission timer. Also adds a "Mirror Decoy" deploy button to cut trace by 30% mid-mission.</td>
+              <td class="t-cost">420 CC</td>
+            </tr>
+            <tr>
+              <td class="t-icon">💀</td>
+              <td class="t-name">Zero Day Exploit</td>
+              <td class="t-effect">One-time use: the first mission you complete with this tool earns 50% bonus CC on top of the normal reward.</td>
+              <td class="t-cost">750 CC</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <span class="callout-label">// RECOMMENDED BUILD ORDER</span>
+          Neural Kit (150) → Ghost Proxy (350) → ICE Spike (200) → Quantum Hash (500). This progression lets you tackle all contract types while keeping your trace risk manageable.
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTRACTS REF -->
+    <div class="section" id="contracts-ref">
+      <div class="section-title"><span class="section-num">06</span>CONTRACT REFERENCE</div>
+      <div class="section-body">
+        <p>There are 8 contracts across four difficulty tiers. Higher difficulty means higher reward but faster trace accumulation.</p>
+
+        <table class="contract-table">
+          <thead>
+            <tr>
+              <th>CONTRACT</th>
+              <th>DIFF</th>
+              <th>REWARD</th>
+              <th>RISK</th>
+              <th>REQUIRES</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--text)">Node Sweep</td>
+              <td class="diff-1">★☆☆☆☆</td>
+              <td class="reward-text">60 CC</td>
+              <td style="color:#44ff88">LOW</td>
+              <td style="color:var(--text-dim)">None</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text)">Recon Sweep</td>
+              <td class="diff-1">★☆☆☆☆</td>
+              <td class="reward-text">80 CC</td>
+              <td style="color:#44ff88">LOW</td>
+              <td style="color:var(--text-dim)">None</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text)">Data Extraction</td>
+              <td class="diff-2">★★☆☆☆</td>
+              <td class="reward-text">180 CC</td>
+              <td style="color:var(--amber)">MEDIUM</td>
+              <td style="color:var(--text-dim)">None</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text)">Credit Siphon</td>
+              <td class="diff-2">★★☆☆☆</td>
+              <td class="reward-text">200 CC</td>
+              <td style="color:var(--amber)">MEDIUM</td>
+              <td style="color:var(--text-dim)">None</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text)">Ghost Contract</td>
+              <td class="diff-3">★★★☆☆</td>
+              <td class="reward-text">???</td>
+              <td style="color:#ff8844">UNKNOWN</td>
+              <td style="color:var(--text-dim)">None</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text)">Firewall Breach</td>
+              <td class="diff-3">★★★☆☆</td>
+              <td class="reward-text">320 CC</td>
+              <td style="color:#ff8844">HIGH</td>
+              <td style="color:var(--purple)">ICE Spike v2</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text)">Crypto Heist</td>
+              <td class="diff-4">★★★★☆</td>
+              <td class="reward-text">550 CC</td>
+              <td style="color:var(--red)">EXTREME</td>
+              <td style="color:var(--purple)">Quantum Hash</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text)">Blacksite Infiltration</td>
+              <td class="diff-4">★★★★☆</td>
+              <td class="reward-text">480 CC</td>
+              <td style="color:var(--red)">EXTREME</td>
+              <td style="color:var(--purple)">Quantum Hash + Ghost Proxy</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout warn">
+          <span class="callout-label">// GHOST CONTRACT</span>
+          The Ghost Contract has a mystery target and a randomized payout between <strong>100–550 CC</strong>. High variance — could be your best run or your worst. No requirements to attempt it.
+        </div>
+      </div>
+    </div>
+
+    <!-- MINIGAMES -->
+    <div class="section" id="minigames">
+      <div class="section-title"><span class="section-num">07</span>MINI-GAMES</div>
+      <div class="section-body">
+        <p>During a mission, the right panel presents one of two mini-games. Completing it grants a <em>bonus breach percentage</em> — speeding up mission completion. If you own the <strong>Neural Scripting Kit</strong>, this is handled automatically.</p>
+
+        <div style="margin: 16px 0 8px; font-family: var(--font-display); font-size: 11px; letter-spacing: 2px; color: var(--green)">CIPHER DECODE</div>
+        <div class="terminal-block">
+          <div class="t-s">[SUBSYSTEM] Cipher decryption required.</div>
+          <div class="t-a">Scrambled: &nbsp;PTYOCNR</div>
+          <div class="t-g">Answer: &nbsp;&nbsp;&nbsp;ENCRYPT</div>
+          <div class="t-s">[RESULT] Correct — breach bonus +20%</div>
+        </div>
+        <p>A word is scrambled and displayed. Type the correct unscrambled word in the input field and press Enter. The answer is always a hacking-related term. Success grants <strong>+20% breach bonus</strong>.</p>
+
+        <div style="margin: 20px 0 8px; font-family: var(--font-display); font-size: 11px; letter-spacing: 2px; color: var(--green)">NODE MAPPING (SYMBOL MATCH)</div>
+        <p style="margin-bottom:8px">A 4×2 grid of symbols is shown (4 pairs, 8 tiles). Click two tiles to attempt a match. Find all 4 pairs to complete the puzzle and earn <strong>+25% breach bonus</strong>. Wrong matches flash red and reset.</p>
+        <div class="callout warn">
+          <span class="callout-label">// TIMING</span>
+          The trace meter fills throughout the mission regardless of whether you're playing the mini-game. Don't spend too long on it — a failed mini-game is better than a trace overload.
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESSION -->
+    <div class="section" id="progression">
+      <div class="section-title"><span class="section-num">08</span>PROGRESSION</div>
+      <div class="section-body">
+        <p>Every completed mission — win or lose — earns <em>XP</em> and updates your four skill bars. Skills improve based on what tools you used and which contract type you ran.</p>
+
+        <div style="margin: 16px 0 8px; font-size: 10px; letter-spacing: 2px; color: var(--text-dim)">SKILL GROWTH</div>
+        <div class="stat-row"><span class="stat-label">BREACH</span><div class="stat-bar"><div class="stat-fill green" style="width:70%"></div></div><span class="stat-val">Grows per diff</span></div>
+        <div class="stat-row"><span class="stat-label">STEALTH</span><div class="stat-bar"><div class="stat-fill blue" style="width:50%"></div></div><span class="stat-val">Ghost Proxy</span></div>
+        <div class="stat-row"><span class="stat-label">DECRYPT</span><div class="stat-bar"><div class="stat-fill purple" style="width:60%"></div></div><span class="stat-val">Cipher games</span></div>
+        <div class="stat-row"><span class="stat-label">EXPLOIT</span><div class="stat-bar"><div class="stat-fill amber" style="width:30%"></div></div><span class="stat-val">Per diff level</span></div>
+
+        <div style="margin: 20px 0 8px; font-size: 10px; letter-spacing: 2px; color: var(--text-dim)">RANK PROGRESSION</div>
+        <table class="rank-table">
+          <tr><td class="rank-num">LVL 1</td><td class="rank-name">Novice</td><td class="rank-xp">0 XP</td></tr>
+          <tr><td class="rank-num">LVL 2</td><td class="rank-name">Lurker</td><td class="rank-xp">200 XP</td></tr>
+          <tr><td class="rank-num">LVL 3</td><td class="rank-name">Script Kiddie</td><td class="rank-xp">500 XP</td></tr>
+          <tr><td class="rank-num">LVL 4</td><td class="rank-name">Gray Hat</td><td class="rank-xp">1,000 XP</td></tr>
+          <tr><td class="rank-num">LVL 5</td><td class="rank-name">Black Hat</td><td class="rank-xp">2,000 XP</td></tr>
+          <tr><td class="rank-num">LVL 6</td><td class="rank-name">Elite</td><td class="rank-xp">4,000 XP</td></tr>
+          <tr><td class="rank-num">LVL 7</td><td class="rank-name">Ghost</td><td class="rank-xp">8,000 XP</td></tr>
+          <tr><td class="rank-num">LVL 8</td><td class="rank-name">Legend</td><td class="rank-xp">15,000 XP</td></tr>
+        </table>
+
+        <p>XP is earned from successful contracts. Higher difficulty = more XP. Your current rank is displayed in the bottom of the left sidebar.</p>
+
+        <div class="callout info">
+          <span class="callout-label">// REPUTATION</span>
+          The REP bar in the sidebar fills as you complete contracts. It's a visual indicator of your standing on the darknet — purely cosmetic for now.
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="section" id="achievements">
+      <div class="section-title"><span class="section-num">09</span>ACHIEVEMENTS</div>
+      <div class="section-body">
+        <p>Achievements are tracked in the System screen and unlock automatically. Unlocked achievements trigger a terminal log entry and a notification.</p>
+        <div class="ach-list">
+          <div class="ach-item"><div class="ach-icon">🩸</div><div><span class="ach-name">First Blood</span><span class="ach-cond">Complete your first contract</span></div></div>
+          <div class="ach-item"><div class="ach-icon">🛒</div><div><span class="ach-name">Black Market Regular</span><span class="ach-cond">Purchase any tool</span></div></div>
+          <div class="ach-item"><div class="ach-icon">⚙</div><div><span class="ach-name">Fully Armed</span><span class="ach-cond">Own 5 tools simultaneously</span></div></div>
+          <div class="ach-item"><div class="ach-icon">💰</div><div><span class="ach-name">Crypto Rich</span><span class="ach-cond">Accumulate 1,000 CC total earned</span></div></div>
+          <div class="ach-item"><div class="ach-icon">👻</div><div><span class="ach-name">Ghost Protocol</span><span class="ach-cond">Purchase the Ghost Proxy Mesh</span></div></div>
+          <div class="ach-item"><div class="ach-icon">🎯</div><div><span class="ach-name">Hard Target</span><span class="ach-cond">Complete 5 contracts total</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIPS -->
+    <div class="section" id="tips">
+      <div class="section-title"><span class="section-num">10</span>PRO TIPS</div>
+      <div class="section-body">
+        <ul class="tips-list">
+          <li><strong>Buy Neural Kit first (150 CC).</strong> Auto-solving puzzles means you can focus entirely on the trace and breach bars during missions instead of juggling both.</li>
+          <li><strong>Watch the trace meter, not the timer.</strong> The timer is cosmetic pressure — trace hitting 100% is the actual failure state. Ghost Proxy Mesh is your best defense against it.</li>
+          <li><strong>Deploy tool buttons mid-mission.</strong> If your trace is climbing fast, don't wait — hit "Deploy Proxy" or "Mirror Decoy" early rather than scrambling at 90%.</li>
+          <li><strong>The Ghost Contract is high variance, not high risk.</strong> It has no tool requirements and the same trace rate as a ★★★ contract. Run it when you want a mystery payout.</li>
+          <li><strong>Save the Zero Day for a Crypto Heist.</strong> The 50% bonus on top of a 550 CC payout can net you 825 CC in a single run — the best return in the game.</li>
+          <li><strong>Check the System screen after every few missions.</strong> Your skill bars and mission history are there — watching them grow is part of the satisfaction loop.</li>
+          <li><strong>Blacklight Scanner pays for itself quickly.</strong> At 250 CC, it reveals hidden bonuses averaging 30–120 CC per contract. It breaks even after 3–4 missions.</li>
+          <li><strong>DarkWire Tap is best for long sessions.</strong> Leave the game open in a tab and let it drip passive CC. Over 30 minutes that's 150 CC for free.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /wrapper -->
+
+<div id="footer">
+  <div>GHOSTNODE OPERATOR FIELD MANUAL // v1.3</div>
+  <div>By Gary Langley &nbsp;|&nbsp; <a href="https://github.com/jellybean1979/ghostnode" target="_blank" style="color:var(--green-dim);text-decoration:none">jellybean1979/ghostnode</a></div>
+</div>
+
+</body>
+</html>
