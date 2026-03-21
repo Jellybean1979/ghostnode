@@ -1301,7 +1301,7 @@ body::after {
                   <tr><td>🔦</td><td>Blacklight Scanner</td><td>Reveals hidden bonus rewards on contract cards.</td><td class="g-cost">250 CC</td></tr>
                   <tr><td>📡</td><td>DarkWire Tap</td><td>Passive income: +5 CC per 60 seconds.</td><td class="g-cost">180 CC</td></tr>
                   <tr><td>🪞</td><td>Mirror VM Stack</td><td>+30s to mission timer. Deploy button: cut trace −30%.</td><td class="g-cost">420 CC</td></tr>
-                  <tr><td>💀</td><td>Zero Day Exploit</td><td>One-time use: first completed mission earns +50% CC bonus.</td><td class="g-cost">750 CC</td></tr>
+                  <tr><td>💀</td><td>Zero Day Exploit</td><td>Freezes trace at 0% and removes all stage timers. Play remaining stages freely with no pressure.</td><td class="g-cost">750 CC</td></tr>
                 </tbody>
               </table>
               <div class="g-callout g-tip"><span class="g-clabel">// RECOMMENDED BUILD ORDER</span>Neural Kit (150) → Ghost Proxy (350) → ICE Spike (200) → Quantum Hash (500)</div>
@@ -1332,7 +1332,7 @@ body::after {
             <div class="g-title"><span class="g-num">07</span>MINI-GAMES</div>
             <div class="g-body">
               <p>Each stage in a contract randomly assigns one of 6 mini-game types. You must complete it before the stage timer runs out or the trace meter hits 100%. All 6 are explained in full below.</p>
-              <div class="g-callout g-tip"><span class="g-clabel">// SHORTCUTS</span><strong>Neural Kit</strong> auto-solves any game type instantly. <strong>Zero Day</strong> skips the stage entirely without playing. Both consume one charge from your stock. <strong>Blacklight Scanner</strong> and <strong>ICE Spike</strong> are both used on the Contracts screen before picking a job, not during missions.</div>
+              <div class="g-callout g-tip"><span class="g-clabel">// SHORTCUTS</span><strong>Neural Kit</strong> auto-solves one stage instantly. <strong>Zero Day</strong> freezes trace at 0% and removes all timers for the rest of the mission — you still play the remaining stages but with zero pressure. <strong>Blacklight Scanner</strong> and <strong>ICE Spike</strong> are used on the Contracts screen before accepting a job.</div>
 
               <div class="g-sub-title">1. CIPHER DECODE</div>
               <p>A hacking-related word has been scrambled into a random order. Your job is to figure out the original word and type it correctly.</p>
@@ -1408,7 +1408,7 @@ body::after {
                 <tbody>
                   <tr><td style="color:var(--green)">BREACH</td><td>Completing contracts — higher difficulty = bigger gain</td></tr>
                   <tr><td style="color:var(--blue)">STEALTH</td><td>+10 per mission where trace stayed under 50% the entire run</td></tr>
-                  <tr><td style="color:var(--purple)">DECRYPT</td><td>+5 per mini-game solved manually (Neural Kit and Zero Day do not count)</td></tr>
+                  <tr><td style="color:var(--purple)">DECRYPT</td><td>+5 per mini-game solved manually (Neural Kit does not count; Zero Day stages still require manual play)</td></tr>
                   <tr><td style="color:var(--green)">EXPLOIT</td><td>Completing contracts — scales with difficulty</td></tr>
                 </tbody>
               </table>
@@ -1441,7 +1441,7 @@ body::after {
                 <li><strong>Watch the trace meter, not the timer.</strong> Trace hitting 100% is the actual failure state. Ghost Proxy Mesh is your best defense.</li>
                 <li><strong>Deploy tools early, not late.</strong> Hit "Deploy Proxy" or "Mirror Decoy" when trace hits 50%, not 90%.</li>
                 <li><strong>Ghost Contract is low risk, high variance.</strong> No requirements, same trace as ★★★. Run it when you want a mystery payout.</li>
-                <li><strong>Save Zero Day for Crypto Heist.</strong> +50% on 550 CC = 825 CC in a single run.</li>
+                <li><strong>Zero Day is your insurance policy.</strong> Pop it when trace is climbing past 70% on a high-value contract. It freezes trace at 0% and removes all timers, giving you a clean run on the remaining stages.</li>
                 <li><strong>Blacklight Scanner pays for itself fast.</strong> At 250 CC it reveals bonuses averaging 30–120 CC. Breaks even in 3–4 missions.</li>
                 <li><strong>DarkWire Tap rewards long sessions.</strong> Leave the game open — 5 CC/min adds up to 150 CC over 30 minutes for free.</li>
                 <li><strong>Check System screen periodically.</strong> Watching your skill bars climb is part of the loop.</li>
@@ -1494,7 +1494,7 @@ const TOOLS = [
   {id:'blacklight',   name:'Blacklight Scanner',    icon:'🔦',cost:250,consumable:true,  desc:'Pre-mission scanner. Use on the Contracts screen to reveal all hidden bonus rewards on every contract card. Bonus is earned automatically on mission success. Reveals last until you leave the screen.', effect:'Reveal all contract bonuses (Contracts screen)'},
   {id:'darkwire',     name:'DarkWire Tap',          icon:'📡',cost:180,consumable:false, desc:'Passive network infiltrator. Permanently generates +5 CC per minute in the background.', effect:'Passive +5 CC/min (permanent)'},
   {id:'mirror_vm',    name:'Mirror VM Stack',       icon:'🪞',cost:420,consumable:true,  desc:'Decoy VM cluster. Deploy on one stage: adds +20 bonus seconds to that stage timer.', effect:'+20s timer (one stage)'},
-  {id:'zero_day',     name:'Zero Day Exploit',      icon:'💀',cost:750,consumable:true,  desc:'Rare unpatched exploit. Deploy on one stage: skips it entirely, counted as complete.', effect:'Skip one stage entirely'},
+  {id:'zero_day',     name:'Zero Day Exploit',      icon:'💀',cost:750,consumable:true,  desc:'Rare unpatched exploit. Deploy during a mission: instantly freezes the trace meter at 0% and removes the stage timer. You continue playing all remaining stages freely with no time pressure or trace risk.', effect:'Freeze trace at 0%, remove timers for rest of mission'},
 ];
 
 const MINIGAME_TYPES = ['cipher','symbols','binary','typing','sequence','wire'];
@@ -1755,7 +1755,7 @@ function startMission(contract, effectiveDiff) {
     diff: diff, gameQueue: gameQueue, gameIdx: 0, gamesWon: 0,
     traceVal: 0, peakTrace: 0, timeLeft: contract.timePerGame,
     logTimer: 0, logIdx: 0, bonusEarned: G.contractsScanned,
-    stageTraceMult: 1, stageSolved: false, manualSolves: 0
+    stageTraceMult: 1, stageSolved: false, manualSolves: 0, traceFrozen: false
   });
   navTo('mission');
   setStatus('RUNNING CONTRACT');
@@ -1834,9 +1834,20 @@ function useConsumable(id) {
     missionLog('[MIRROR VM] Decoy cluster online -- +20s added.', 't-info');
     notify('Mirror VM: +20 seconds!');
   } else if (id === 'zero_day') {
-    missionLog('[ZERO DAY] Exploit fired -- stage bypassed.', 't-success');
-    notify('Zero Day: Stage skipped!');
-    solveCurrentStage(true);
+    m.traceFrozen = true;
+    m.traceVal = 0;
+    m.stageTraceMult = 0; // stops all future trace accumulation
+    document.getElementById('trace-fill').style.height = '0%';
+    document.getElementById('trace-pct-val').textContent = '0';
+    // Remove the stage timer — set timeLeft to a large number so it never expires
+    m.timeLeft = 99999;
+    document.getElementById('m-timer').textContent = '--:--';
+    missionLog('[ZERO DAY] Exploit detonated -- trace neutralized. Timer suspended. Complete remaining stages freely.', 't-success');
+    notify('Zero Day: Trace frozen at 0%! No time limit for rest of mission.');
+    // Style the trace bar to show it is frozen
+    document.getElementById('trace-fill').style.background = 'var(--blue)';
+    document.getElementById('trace-fill').style.boxShadow = '0 0 10px var(--blue)';
+    document.querySelector('.trace-pct').style.color = 'var(--blue)';
   }
 }
 
@@ -1853,12 +1864,13 @@ function solveCurrentStage(fromConsumable) {
 function launchStage() {
   var m = G.currentMission;
   m.stageSolved = false;
-  m.stageTraceMult = 1;
-  m.timeLeft = m.timePerGame;
+  if (!m.traceFrozen) m.stageTraceMult = 1;
+  m.timeLeft = m.traceFrozen ? 99999 : m.timePerGame;
+  if (m.traceFrozen) document.getElementById('m-timer').textContent = '--:--';
   document.getElementById('breach-bar').style.width = '0%';
   document.getElementById('breach-pct').textContent = '0%';
   document.getElementById('breach-label').textContent = 'AWAITING BREACH...';
-  document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
+  if (!m.traceFrozen) document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
   document.getElementById('minigame-area').innerHTML = '';
   var gt = m.gameQueue[m.gameIdx];
   document.getElementById('minigame-title').textContent = 'STAGE ' + (m.gameIdx+1) + '/' + m.gameQueue.length + ' -- ' + gt.toUpperCase();
@@ -1876,13 +1888,15 @@ function launchStage() {
 function missionTick() {
   var m = G.currentMission;
   if (!m) return;
-  m.timeLeft = Math.max(0, m.timeLeft - 1);
-  document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
-  var traceInc = (m.trace * m.stageTraceMult) * (100 / (m.timePerGame * 1.8));
-  m.traceVal = Math.min(100, m.traceVal + traceInc);
-  document.getElementById('trace-fill').style.height = m.traceVal + '%';
-  document.getElementById('trace-pct-val').textContent = Math.round(m.traceVal);
-  if (m.traceVal > m.peakTrace) m.peakTrace = m.traceVal;
+  if (!m.traceFrozen) {
+    m.timeLeft = Math.max(0, m.timeLeft - 1);
+    document.getElementById('m-timer').textContent = fmtTime(m.timeLeft);
+    var traceInc = (m.trace * m.stageTraceMult) * (100 / (m.timePerGame * 1.8));
+    m.traceVal = Math.min(100, m.traceVal + traceInc);
+    document.getElementById('trace-fill').style.height = m.traceVal + '%';
+    document.getElementById('trace-pct-val').textContent = Math.round(m.traceVal);
+    if (m.traceVal > m.peakTrace) m.peakTrace = m.traceVal;
+  }
   m.logTimer++;
   if (m.logTimer % 4 === 0) {
     missionLog(LOG_LINES[m.logIdx % LOG_LINES.length], m.traceVal > 70 ? 't-warn' : 't-system');
